@@ -1,0 +1,44 @@
+{
+  "data_sources": [
+    {
+      "name": "UDISE+ Annual Report 2021-22",
+      "url": "https://udiseplus.gov.in/",
+      "state_code_mp": "23"
+    },
+    {
+      "name": "NFHS-5 (2019-21)",
+      "url": "https://rchiips.org/nfhs/"
+    },
+    {
+      "name": "Census 2011 Primary Census Abstract",
+      "url": "https://censusindia.gov.in"
+    },
+    {
+      "name": "ASER 2022",
+      "url": "https://asercentre.org/"
+    },
+    {
+      "name": "MP Budget 2021-22",
+      "url": "https://mpfinance.gov.in/"
+    }
+  ],
+  "key_statistics_used": {
+    "mp_primary_enrollment_rate_2022": "97.2%",
+    "mp_secondary_dropout_rate_2022": "17.8%",
+    "mp_literacy_rate_census_2011": "70.6%",
+    "mp_female_literacy_nfhs5": "60.0%",
+    "mp_gpi_primary": "0.98",
+    "mp_per_student_exp_rs": "8750",
+    "mp_schools_with_internet_pct": "31.2%",
+    "tribal_districts_mp": [
+      "Jhabua",
+      "Alirajpur",
+      "Dindori",
+      "Mandla",
+      "Barwani",
+      "Balaghat",
+      "Betul"
+    ]
+  },
+  "augmentation_method": "District seeds from published factsheets; temporal variation from UDISE+ annual trends; noise \u00b10.5-2%"
+}

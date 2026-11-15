@@ -151,6 +151,36 @@ class OptimizeRequest(BaseModel):
 # ─────────────────────────────────────────────────────────────────────────────
 # ENDPOINTS
 # ─────────────────────────────────────────────────────────────────────────────
+@app.get("/")
+def get_root():
+    """Root landing gateway providing system status, documentation links, and active endpoints."""
+    return {
+        "title": "National Healthcare Policy Prediction & Decision Intelligence System (NHP-DIS)",
+        "status": "online",
+        "documentation": "/docs",
+        "frontend": "https://policy.fddcloud.me",
+        "scope": {
+            "districts_count": state.df["district_name"].nunique() if state.df is not None else 698,
+            "states_count": state.df["state_name"].nunique() if state.df is not None else 34,
+            "empirical_records": len(state.df) if state.df is not None else 1278,
+            "grounding": "100% Authentic Government Data (IIPS NFHS-4, NFHS-5, MoHFW RHS, NITI Aayog MPI)"
+        },
+        "endpoints": {
+            "health": "/health",
+            "summary": "/summary",
+            "districts": "/districts",
+            "states": "/states",
+            "simulate": "/simulate",
+            "forecast": "/forecast",
+            "compare": "/compare",
+            "sensitivity": "/sensitivity",
+            "optimize": "/optimize",
+            "causal_dag": "/dag",
+            "ai_copilot": "/nl-query"
+        }
+    }
+
+
 @app.get("/health")
 def get_health():
     """System health check and data verification."""

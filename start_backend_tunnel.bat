@@ -8,7 +8,7 @@ echo.
 
 :: 1. Start Backend Server
 echo [1/2] Starting FastAPI Backend on http://localhost:8000 ...
-start "NHP-DIS Backend Server" cmd /k "cd national_health_policy\backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000"
+start "NHP-DIS Backend Server" cmd /k "cd national_health_policy\backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
 
 echo Waiting 4 seconds for backend initialization...
 timeout /t 4 /nobreak >nul

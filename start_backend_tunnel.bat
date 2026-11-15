@@ -13,12 +13,19 @@ start "NHP-DIS Backend Server" cmd /k "cd national_health_policy\backend && pyth
 echo Waiting 4 seconds for backend initialization...
 timeout /t 4 /nobreak >nul
 
+:: Add cloudflared to PATH if in standard Program Files directory
+if exist "C:\Program Files (x86)\cloudflared\cloudflared.exe" (
+    set "PATH=C:\Program Files (x86)\cloudflared;%PATH%"
+)
+if exist "C:\Program Files\cloudflared\cloudflared.exe" (
+    set "PATH=C:\Program Files\cloudflared;%PATH%"
+)
+
 :: 2. Check if cloudflared exists
 where cloudflared >nul 2>nul
 if %errorlevel% neq 0 (
     echo.
-    echo [2/2] cloudflared is not installed yet.
-    echo Installing cloudflared via winget...
+    echo [2/2] cloudflared is not in PATH. Installing via winget...
     winget install --id Cloudflare.cloudflared -e --accept-source-agreements --accept-package-agreements
     echo.
 )

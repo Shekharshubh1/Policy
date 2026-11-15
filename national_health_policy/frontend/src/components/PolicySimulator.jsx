@@ -11,13 +11,14 @@ import {
   BarChart2,
   X,
   Sparkles,
-  Check,
-  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
   ArrowRight,
   ShieldAlert,
   GitBranch,
   Table,
-  Cpu
+  Cpu,
+  Info
 } from "lucide-react";
 import {
   apiClient,
@@ -39,7 +40,7 @@ function formatNumber(val, decimals = 1) {
   return Number(val).toFixed(decimals);
 }
 
-function Spinner({ size = 16 }) {
+function Spinner({ size = 14 }) {
   return (
     <svg
       style={{ width: size, height: size }}
@@ -54,23 +55,23 @@ function Spinner({ size = 16 }) {
   );
 }
 
-// Compact Probability Sparkline / Multi-segment Bar
+// Compact Probability Sparkline
 function ProbabilityShiftBar({ dist }) {
   const low = Math.round((dist?.Low ?? 0) * 100);
   const med = Math.round((dist?.Medium ?? 0) * 100);
   const high = Math.round((dist?.High ?? 0) * 100);
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       <div className="h-1.5 w-full bg-surface-elevated rounded-full flex overflow-hidden">
         <div style={{ width: `${low}%` }} className="bg-sky-500 transition-all" title={`Low: ${low}%`} />
         <div style={{ width: `${med}%` }} className="bg-amber-500 transition-all" title={`Medium: ${med}%`} />
         <div style={{ width: `${high}%` }} className="bg-emerald-500 transition-all" title={`High: ${high}%`} />
       </div>
       <div className="flex justify-between text-[9px] font-mono text-text-tertiary">
-        <span className="text-sky-400">L: {low}%</span>
-        <span className="text-amber-400">M: {med}%</span>
-        <span className="text-emerald-400">H: {high}%</span>
+        <span className="text-sky-400">L:{low}%</span>
+        <span className="text-amber-400">M:{med}%</span>
+        <span className="text-emerald-400">H:{high}%</span>
       </div>
     </div>
   );
@@ -87,14 +88,14 @@ function CompactOutcomeCard({ config, value, distribution, baseline }) {
   const meetsTarget = config.target != null && (config.highIsGood ? value >= config.target : value <= config.target);
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-3 flex flex-col justify-between space-y-2 hover:border-border/80 transition-colors shadow-sm">
+    <div className="bg-surface border border-border rounded-lg p-2.5 flex flex-col justify-between space-y-1.5 hover:border-border/80 transition-colors shadow-sm">
       <div className="flex items-start justify-between gap-1">
         <div className="min-w-0">
           <div className="text-xs font-semibold text-text-primary truncate">{config.label}</div>
-          <div className="text-[10px] text-text-tertiary font-mono">{config.unit}</div>
+          <div className="text-[9px] text-text-tertiary font-mono">{config.unit}</div>
         </div>
         <div className="text-right shrink-0">
-          <div className="text-lg font-bold font-mono" style={{ color: config.color || "var(--accent-highlight)" }}>
+          <div className="text-base font-bold font-mono" style={{ color: config.color || "var(--accent-highlight)" }}>
             {formatNumber(value, config.decimals ?? 1)}
           </div>
           {diff !== null && (
@@ -106,9 +107,9 @@ function CompactOutcomeCard({ config, value, distribution, baseline }) {
         </div>
       </div>
 
-      <div className="pt-1.5 border-t border-border/50">
-        <div className="flex items-center justify-between text-[9px] font-mono text-text-tertiary mb-1">
-          <span>Posterior Shift</span>
+      <div className="pt-1 border-t border-border/50">
+        <div className="flex items-center justify-between text-[9px] font-mono text-text-tertiary mb-0.5">
+          <span>Posterior</span>
           {meetsTarget ? (
             <span className="text-emerald-400 font-semibold">SDG Met</span>
           ) : (
@@ -117,6 +118,70 @@ function CompactOutcomeCard({ config, value, distribution, baseline }) {
         </div>
         <ProbabilityShiftBar dist={dist} />
       </div>
+    </div>
+  );
+}
+
+// Ultra-compact Lever Item with Hover/Click-Activated Slider to Save Space
+function CompactLeverItem({ cfg, val, baselineVal, isModified, onChange }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
+      className={`p-2 rounded-lg border transition-all ${
+        isModified
+          ? "bg-primary-950/25 border-primary-500/50 shadow-sm"
+          : "bg-surface-elevated/30 border-border/60 hover:border-border hover:bg-surface-elevated/60"
+      }`}
+    >
+      <div
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex justify-between items-center text-xs cursor-pointer select-none"
+      >
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary-400 shrink-0" />
+          <span className="font-medium text-text-primary text-[11px] truncate">{cfg.label}</span>
+          <span className="text-[9px] font-mono text-text-tertiary truncate hidden sm:inline">
+            ({cfg.domain})
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 font-mono text-[11px] shrink-0">
+          <span className="text-primary-400 font-bold">{cfg.format(val)}</span>
+          {isModified && (
+            <span className="text-[9px] text-text-tertiary hidden sm:inline">
+              (base: {cfg.format(baselineVal)})
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Slider reveals smoothly on Hover or Click */}
+      {isExpanded && (
+        <div className="pt-1.5 mt-1 border-t border-border/40 space-y-1 animate-in fade-in duration-150">
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={cfg.min}
+              max={cfg.max}
+              step={cfg.step}
+              value={val}
+              onChange={(e) => onChange(cfg.key, e.target.value)}
+              className="w-full cursor-pointer h-1.5"
+              style={{ accentColor: "var(--accent-highlight)" }}
+            />
+            <span className="text-[10px] font-mono text-text-secondary shrink-0 w-12 text-right">
+              {cfg.format(val)}
+            </span>
+          </div>
+          <div className="flex justify-between text-[9px] text-text-tertiary font-mono">
+            <span>Min: {cfg.min}</span>
+            <span className="text-text-secondary">{cfg.unit}</span>
+            <span>Max: {cfg.max}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -139,7 +204,7 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
   // AI Recommendation State
   const [aiLoading, setAiLoading] = useState(false);
   const [aiRecommendations, setAiRecommendations] = useState(null);
-  const [aiError, setAiError] = useState(null);
+  const [showAiModal, setShowAiModal] = useState(false); // Hover/Click modal for brief summary
 
   // Sector filter tabs & Right Panel Active Tab
   const [activeSector, setActiveSector] = useState("all");
@@ -214,6 +279,7 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
       setSelectedDistrictName("");
       setInputs({ ...DEFAULT_POLICY_INPUTS });
       setAiRecommendations(null);
+      setShowAiModal(false);
       apiClient.simulate(DEFAULT_POLICY_INPUTS).then((res) => setResults(res)).catch(() => {});
       return;
     }
@@ -235,16 +301,14 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
   const handleFetchAiRecommendations = async () => {
     if (!selectedDistrictName) return;
     setAiLoading(true);
-    setAiError(null);
     try {
       const recs = await apiClient.districtRecommendations(selectedDistrictName);
       if (recs && recs.status === "success") {
         setAiRecommendations(recs);
-      } else {
-        setAiError("Could not retrieve AI recommendations");
+        setShowAiModal(true);
       }
     } catch (err) {
-      setAiError(err?.message || "Failed to generate AI policy advice");
+      console.warn("Could not retrieve AI recommendations:", err);
     } finally {
       setAiLoading(false);
     }
@@ -257,6 +321,7 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
     const updated = { ...inputs, ...recs };
     setInputs(updated);
     apiClient.simulate(updated).then((res) => setResults(res)).catch(() => {});
+    setShowAiModal(false);
   };
 
   const handleSliderChange = useCallback((key, value) => {
@@ -291,6 +356,7 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
     setSelectedDistrictName("");
     setInputs({ ...DEFAULT_POLICY_INPUTS });
     setAiRecommendations(null);
+    setShowAiModal(false);
     if (onClearDistrictContext) onClearDistrictContext();
     apiClient.simulate(DEFAULT_POLICY_INPUTS).then((res) => setResults(res)).catch(() => {});
   };
@@ -331,14 +397,14 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
   const groupedPathways = useMemo(() => {
     if (!results?.causal_pathways) return [];
     const groups = {
-      "Human Resources & Staffing": [],
+      "Workforce & Staffing": [],
       "Clinical Care & Facilities": [],
       "Social & Environmental Determinants": [],
       "Digital Health & Governance": []
     };
     results.causal_pathways.forEach((p) => {
       const type = p.origin_type || "";
-      if (type.includes("Human")) groups["Human Resources & Staffing"].push(p);
+      if (type.includes("Human")) groups["Workforce & Staffing"].push(p);
       else if (type.includes("Environmental") || type.includes("Social")) groups["Social & Environmental Determinants"].push(p);
       else if (type.includes("Digital")) groups["Digital Health & Governance"].push(p);
       else groups["Clinical Care & Facilities"].push(p);
@@ -380,50 +446,50 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {/* ── Compact Header & Action Strip ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border">
         <div>
-          <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
+          <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
             <Sliders className="w-4 h-4 text-primary-400" />
             Causal Policy Intervention Simulator
           </h2>
           <p className="text-[11px] text-text-secondary">
-            Simulate prospective structural interventions (Pearl's do-calculus) conditioned on empirical NFHS-5 district baselines.
+            Simulate structural interventions (Pearl's do-calculus) conditioned on empirical NFHS-5 district baselines.
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {results && (
             <button
               onClick={handleExportMemo}
-              className="px-2.5 py-1 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-elevated rounded border border-border transition-colors flex items-center gap-1 cursor-pointer"
+              className="px-2 py-0.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-elevated rounded border border-border transition-colors flex items-center gap-1 cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3 h-3" />
               <span>Memo</span>
             </button>
           )}
           <button
             onClick={handleReset}
-            className="px-2.5 py-1 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-elevated rounded border border-border transition-colors flex items-center gap-1 cursor-pointer"
+            className="px-2 py-0.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-elevated rounded border border-border transition-colors flex items-center gap-1 cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-3 h-3" />
             <span>Reset</span>
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="bg-rose-950/40 border border-rose-800 text-rose-300 p-2.5 rounded-lg text-xs">
+        <div className="bg-rose-950/40 border border-rose-800 text-rose-300 p-2 rounded text-xs">
           {error}
         </div>
       )}
 
-      {/* ── District Selector & Presets Strip ── */}
-      <div className="bg-surface rounded-xl border border-border p-2.5 space-y-2">
+      {/* ── Compact Control Bar: District Selection, Presets & AI Recommender ── */}
+      <div className="bg-surface rounded-xl border border-border p-2 space-y-1.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          {/* District Picker */}
+          {/* District Selectors */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1">
+            <span className="text-[10px] font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1">
               <MapPin className="w-3 h-3 text-primary-400" />
               District:
             </span>
@@ -448,7 +514,7 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
               value={selectedDistrictName}
               onChange={(e) => handleSelectDistrict(e.target.value)}
               disabled={districtLoading}
-              className="bg-surface-elevated border border-border rounded px-2 py-0.5 text-xs text-text-primary focus:outline-none min-w-[170px]"
+              className="bg-surface-elevated border border-border rounded px-2 py-0.5 text-xs text-text-primary focus:outline-none min-w-[160px]"
             >
               <option value="">National Baseline (698 Districts)</option>
               {filteredDistricts.map((d) => (
@@ -458,12 +524,12 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
               ))}
             </select>
 
-            {districtLoading && <Spinner size={14} />}
+            {districtLoading && <Spinner size={13} />}
 
             {activeDistrictProfile && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950/60 text-emerald-400 border border-emerald-800">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                {activeDistrictProfile.district_name}, {activeDistrictProfile.state_name} (NFHS-5)
+                {activeDistrictProfile.district_name}, {activeDistrictProfile.state_name}
                 <button onClick={() => handleSelectDistrict("")} className="hover:text-emerald-200 ml-0.5">
                   <X className="w-2.5 h-2.5" />
                 </button>
@@ -471,22 +537,62 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
             )}
           </div>
 
-          {/* AI Advisor Button (Appears when district selected) */}
+          {/* AI Advisor Button & Dropdown Trigger */}
           {selectedDistrictName && (
-            <button
-              onClick={handleFetchAiRecommendations}
-              disabled={aiLoading}
-              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-700/60 flex items-center gap-1.5 transition-colors cursor-pointer select-none"
-            >
-              {aiLoading ? <Spinner size={13} /> : <Sparkles className="w-3.5 h-3.5 text-indigo-400" />}
-              <span>{aiLoading ? "Consulting AI Advisor..." : "AI Health Need Diagnosis & Lever Suggestions"}</span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={handleFetchAiRecommendations}
+                disabled={aiLoading}
+                className="px-2.5 py-0.5 text-xs font-semibold rounded bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-700/60 flex items-center gap-1.5 transition-colors cursor-pointer select-none"
+              >
+                {aiLoading ? <Spinner size={12} /> : <Sparkles className="w-3 h-3 text-indigo-400" />}
+                <span>{aiLoading ? "Consulting AI..." : "AI Health Need Diagnosis & Advice"}</span>
+              </button>
+
+              {/* Hover or Click Modal for Brief Summary */}
+              {showAiModal && aiRecommendations && (
+                <div className="absolute right-0 top-8 z-30 w-80 bg-surface border border-indigo-700/80 rounded-xl p-3 shadow-xl space-y-2 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-border">
+                    <span className="text-xs font-bold text-indigo-300 flex items-center gap-1">
+                      <Cpu className="w-3.5 h-3.5" />
+                      LLaMA-3.3-70B Diagnosis
+                    </span>
+                    <button onClick={() => setShowAiModal(false)} className="text-text-tertiary hover:text-text-primary">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <p className="text-[11px] text-text-secondary leading-relaxed">
+                    {aiRecommendations.diagnostic_summary}
+                  </p>
+
+                  <div className="space-y-1">
+                    <div className="text-[9px] font-mono text-text-tertiary uppercase">Prescribed Interventions:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(aiRecommendations.recommended_levers || {}).slice(0, 4).map(([k, v]) => (
+                        <span key={k} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-surface-elevated border border-border text-indigo-200">
+                          {formatLabel(k)}: <strong>{formatNumber(v, 1)}</strong>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleApplyAiLevers}
+                    className="w-full py-1 text-center bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Apply Levers & Re-simulate</span>
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Policy Presets */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-1.5 border-t border-border/40 pb-0.5 text-xs">
-          <span className="text-[10px] font-semibold text-text-tertiary uppercase tracking-wider shrink-0 flex items-center gap-1">
+        {/* Presets Strip */}
+        <div className="flex items-center gap-1 overflow-x-auto pt-1 border-t border-border/40 text-xs">
+          <span className="text-[9px] font-semibold text-text-tertiary uppercase tracking-wider shrink-0 flex items-center gap-1">
             <Layers className="w-3 h-3" />
             Presets:
           </span>
@@ -494,7 +600,7 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
             <button
               key={preset.id}
               onClick={() => handleApplyPreset(preset)}
-              className="px-2 py-0.5 rounded-full bg-surface-elevated hover:bg-surface-elevated/80 border border-border text-[10px] text-text-secondary hover:text-text-primary whitespace-nowrap transition-colors cursor-pointer"
+              className="px-2 py-0.5 rounded-full bg-surface-elevated hover:bg-surface-elevated/80 border border-border text-[9px] text-text-secondary hover:text-text-primary whitespace-nowrap transition-colors cursor-pointer"
             >
               {preset.name}
             </button>
@@ -502,23 +608,22 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
         </div>
       </div>
 
-      {/* ── "Before" Actual Empirical Baseline & AI Policy Recommendations Strip ── */}
+      {/* ── District Empirical Baseline ("Before" Actual Data) Compact Strip ── */}
       {activeDistrictProfile && (
-        <div className="bg-surface rounded-xl border border-border p-3 space-y-2.5">
+        <div className="bg-surface rounded-xl border border-border p-2 space-y-1.5">
           <div className="flex items-center justify-between">
-            <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-              <span>{activeDistrictProfile.district_name} — "Before" Actual Empirical Data (NFHS-5 / RHS)</span>
+            <div className="text-[11px] font-semibold text-text-primary flex items-center gap-1.5">
+              <ShieldAlert className="w-3 h-3 text-amber-400" />
+              <span>{activeDistrictProfile.district_name} — "Before" Actual Baseline (NFHS-5)</span>
             </div>
-            <span className="text-[10px] font-mono text-text-tertiary">Official Survey Baseline</span>
+            <span className="text-[9px] font-mono text-text-tertiary">Official Survey Benchmarks</span>
           </div>
 
-          {/* Empirical Benchmark Badges Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1.5">
             {[
-              { label: "Maternal Mortality", val: activeDistrictProfile.maternal_mortality_rate, unit: "per 100k", nat: 103.0, lowerIsGood: true },
-              { label: "Infant Mortality", val: activeDistrictProfile.infant_mortality_rate, unit: "per 1k", nat: 32.6, lowerIsGood: true },
-              { label: "Doctor Ratio", val: activeDistrictProfile.doctor_ratio, unit: "per 10k", nat: 7.5, lowerIsGood: false },
+              { label: "Maternal Mortality", val: activeDistrictProfile.maternal_mortality_rate, unit: "/100k", nat: 103.0, lowerIsGood: true },
+              { label: "Infant Mortality", val: activeDistrictProfile.infant_mortality_rate, unit: "/1k", nat: 32.6, lowerIsGood: true },
+              { label: "Doctor Ratio", val: activeDistrictProfile.doctor_ratio, unit: "/10k", nat: 7.5, lowerIsGood: false },
               { label: "Specialist Posts", val: activeDistrictProfile.specialist_availability, unit: "%", nat: 35.0, lowerIsGood: false },
               { label: "Institutional Births", val: activeDistrictProfile.institutional_delivery_rate, unit: "%", nat: 88.6, lowerIsGood: false },
               { label: "Full Immunization", val: activeDistrictProfile.immunization_rate, unit: "%", nat: 77.0, lowerIsGood: false }
@@ -526,86 +631,43 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
               const diff = m.val != null && m.nat != null ? m.val - m.nat : 0;
               const isDeficit = m.lowerIsGood ? diff > 0 : diff < 0;
               return (
-                <div key={idx} className="bg-surface-elevated/50 border border-border/60 rounded-lg p-2 font-mono text-center">
-                  <div className="text-[10px] text-text-tertiary truncate">{m.label}</div>
-                  <div className="text-sm font-bold text-text-primary my-0.5">
-                    {formatNumber(m.val, 1)} <span className="text-[9px] font-normal text-text-tertiary">{m.unit}</span>
+                <div key={idx} className="bg-surface-elevated/40 border border-border/60 rounded p-1.5 font-mono text-center">
+                  <div className="text-[9px] text-text-tertiary truncate">{m.label}</div>
+                  <div className="text-xs font-bold text-text-primary">
+                    {formatNumber(m.val, 1)} <span className="text-[8px] font-normal text-text-tertiary">{m.unit}</span>
                   </div>
-                  <div className={`text-[9px] font-semibold ${isDeficit ? "text-rose-400" : "text-emerald-400"}`}>
-                    {isDeficit ? "Deficit vs Nat." : "At/Above Nat."}
+                  <div className={`text-[8px] font-semibold ${isDeficit ? "text-rose-400" : "text-emerald-400"}`}>
+                    {isDeficit ? "Deficit" : "At/Above"}
                   </div>
                 </div>
               );
             })}
           </div>
-
-          {/* AI Recommended Levers Card (LLaMA-3.3-70B on Groq) */}
-          {aiRecommendations && (
-            <div className="bg-indigo-950/20 border border-indigo-700/50 rounded-lg p-3 space-y-2 mt-2">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-indigo-800/40">
-                <div className="flex items-center gap-1.5">
-                  <Cpu className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="text-xs font-semibold text-indigo-200">
-                    AI Strategic Policy Diagnosis (Groq LLaMA-3.3-70B)
-                  </span>
-                </div>
-                <button
-                  onClick={handleApplyAiLevers}
-                  className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm shrink-0"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  <span>Apply AI Recommended Levers & Simulate</span>
-                </button>
-              </div>
-
-              <p className="text-[11px] text-text-secondary leading-relaxed">
-                {aiRecommendations.diagnostic_summary}
-              </p>
-
-              {/* Recommended Levers Pills */}
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {Object.entries(aiRecommendations.recommended_levers || {}).map(([lever, recVal]) => {
-                  const currentVal = inputs[lever];
-                  return (
-                    <span
-                      key={lever}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-elevated border border-border text-[10px] font-mono text-text-primary"
-                    >
-                      <span className="text-text-secondary">{formatLabel(lever)}:</span>
-                      <span className="text-text-tertiary line-through">{formatNumber(currentVal, 1)}</span>
-                      <ArrowRight className="w-2.5 h-2.5 text-indigo-400" />
-                      <span className="text-indigo-300 font-bold">{formatNumber(recVal, 1)}</span>
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
-      {/* ── Main Viewport-Constrained Split Console ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        {/* Left: Levers Console (5 cols) with internal scroll container */}
-        <div className="lg:col-span-5 bg-surface rounded-xl border border-border p-3 flex flex-col h-[560px]">
+      {/* ── Viewport-Constrained Split Console (Zero Infinite Scrolling) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5">
+        {/* Left: Compact Levers Console (5 cols) with internal scroll container */}
+        <div className="lg:col-span-5 bg-surface rounded-xl border border-border p-2.5 flex flex-col h-[520px]">
           {/* Levers Header */}
-          <div className="pb-2 border-b border-border space-y-2 shrink-0">
+          <div className="pb-2 border-b border-border space-y-1.5 shrink-0">
             <div className="flex items-center justify-between">
-              <div className="text-xs font-semibold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
+              <div className="text-xs font-semibold text-text-primary uppercase tracking-wider flex items-center gap-1">
                 <Sliders className="w-3.5 h-3.5 text-primary-400" />
-                Intervention Levers ({filteredSliders.length})
+                Interventions ({filteredSliders.length})
               </div>
               <button
                 onClick={handleRunSimulation}
                 disabled={loading}
-                className="px-2.5 py-1 bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white font-semibold rounded text-[11px] transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm select-none"
+                className="px-2.5 py-0.5 bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white font-semibold rounded text-[11px] transition-colors flex items-center gap-1 cursor-pointer shadow-sm select-none"
               >
                 {loading ? <Spinner size={12} /> : <Activity className="w-3 h-3" />}
                 <span>Simulate</span>
               </button>
             </div>
 
-            {/* Sector Sub-Tabs */}
+            {/* Sector Tabs */}
             <div className="flex gap-1 overflow-x-auto pb-0.5 text-xs">
               {[
                 { id: "all", label: "All" },
@@ -630,56 +692,30 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
             </div>
           </div>
 
-          {/* Scrollable Sliders List with compact craft */}
-          <div className="flex-1 overflow-y-auto pr-1 py-2 space-y-2">
+          {/* Scrollable Sliders List with Hover-Activated Space-Saving Sliders */}
+          <div className="flex-1 overflow-y-auto pr-1 py-1.5 space-y-1.5">
             {filteredSliders.map((cfg) => {
               const val = inputs[cfg.key] ?? cfg.min;
               const baselineVal = activeDistrictProfile?.[cfg.key] ?? DEFAULT_POLICY_INPUTS[cfg.key];
               const isModified = Math.abs(val - baselineVal) > 0.05;
 
               return (
-                <div
+                <CompactLeverItem
                   key={cfg.key}
-                  className={`p-2 rounded-lg border transition-colors ${
-                    isModified
-                      ? "bg-primary-950/30 border-primary-500/50"
-                      : "bg-surface-elevated/30 border-border/60 hover:border-border"
-                  }`}
-                >
-                  <div className="flex justify-between items-center text-xs mb-1">
-                    <span className="font-medium text-text-primary text-[11px] truncate">{cfg.label}</span>
-                    <div className="flex items-center gap-1 font-mono text-[11px]">
-                      <span className="text-primary-400 font-bold">{cfg.format(val)}</span>
-                      {isModified && (
-                        <span className="text-[9px] text-text-tertiary">
-                          (base: {cfg.format(baselineVal)})
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <input
-                    type="range"
-                    min={cfg.min}
-                    max={cfg.max}
-                    step={cfg.step}
-                    value={val}
-                    onChange={(e) => handleSliderChange(cfg.key, e.target.value)}
-                    className="w-full cursor-pointer h-1.5"
-                    style={{ accentColor: "var(--accent-highlight)" }}
-                  />
-                  <div className="flex justify-between text-[9px] text-text-tertiary font-mono mt-0.5">
-                    <span>{cfg.domain}</span>
-                    <span>{cfg.unit}</span>
-                  </div>
-                </div>
+                  cfg={cfg}
+                  val={val}
+                  baselineVal={baselineVal}
+                  isModified={isModified}
+                  onChange={handleSliderChange}
+                />
               );
             })}
           </div>
         </div>
 
         {/* Right: Policy Intelligence Hub (7 cols) with Tab Controller */}
-        <div className="lg:col-span-7 bg-surface rounded-xl border border-border p-3 flex flex-col h-[560px]">
-          {/* Sub-View Navigation Tabs */}
+        <div className="lg:col-span-7 bg-surface rounded-xl border border-border p-2.5 flex flex-col h-[520px]">
+          {/* Sub-View Tabs */}
           <div className="flex items-center justify-between pb-2 border-b border-border shrink-0">
             <div className="flex items-center gap-1">
               {[
@@ -692,13 +728,13 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
                   <button
                     key={tab.id}
                     onClick={() => setRightPanelTab(tab.id)}
-                    className={`px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    className={`px-2 py-0.5 rounded text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
                       rightPanelTab === tab.id
                         ? "bg-surface-elevated text-text-primary border border-border font-semibold shadow-sm"
                         : "text-text-tertiary hover:text-text-secondary"
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5" />
+                    <Icon className="w-3 h-3" />
                     <span>{tab.label}</span>
                     {tab.count != null && (
                       <span className="text-[9px] px-1 rounded-full bg-surface border border-border text-text-secondary">
@@ -716,11 +752,11 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
           </div>
 
           {/* Scrollable Tab Content Container */}
-          <div className="flex-1 overflow-y-auto py-2.5 pr-1">
+          <div className="flex-1 overflow-y-auto py-2 pr-1">
             {/* TAB 1: OUTCOMES & POSTERIORS */}
             {rightPanelTab === "outcomes" && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {Object.entries(PRIMARY_OUTCOME_CONFIGS).map(([key, cfg]) => (
                     <CompactOutcomeCard
                       key={key}
@@ -736,19 +772,19 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
 
             {/* TAB 2: CAUSAL TRANSMISSION PATHWAYS */}
             {rightPanelTab === "causal" && (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {groupedPathways.length > 0 ? (
                   groupedPathways.map(([groupName, paths], gIdx) => (
-                    <div key={gIdx} className="bg-surface-elevated/30 border border-border/60 rounded-lg p-2.5 space-y-2">
+                    <div key={gIdx} className="bg-surface-elevated/30 border border-border/60 rounded-lg p-2 space-y-1.5">
                       <div className="text-[11px] font-semibold text-text-primary flex items-center justify-between">
                         <span>{groupName}</span>
-                        <span className="text-[10px] font-mono text-text-tertiary">{paths.length} routes</span>
+                        <span className="text-[9px] font-mono text-text-tertiary">{paths.length} routes</span>
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         {paths.map((p, pIdx) => (
                           <div
                             key={pIdx}
-                            className="bg-surface border border-border/50 rounded p-2 text-[10px] font-mono flex flex-wrap items-center gap-1"
+                            className="bg-surface border border-border/50 rounded p-1.5 text-[10px] font-mono flex flex-wrap items-center gap-1"
                           >
                             {p.path.map((node, nIdx) => (
                               <span key={nIdx} className="flex items-center gap-1">
@@ -779,14 +815,14 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border text-text-secondary font-mono text-[10px]">
-                      <th className="text-left py-2 px-2 font-semibold">Health Indicator</th>
-                      <th className="text-right py-2 px-2 font-semibold">Baseline</th>
-                      <th className="text-right py-2 px-2 font-semibold text-primary-400">Simulated Policy</th>
-                      <th className="text-right py-2 px-2 font-semibold">Absolute Δ</th>
-                      <th className="text-right py-2 px-2 font-semibold">SDG 2030 Status</th>
+                      <th className="text-left py-1.5 px-2 font-semibold">Health Indicator</th>
+                      <th className="text-right py-1.5 px-2 font-semibold">Baseline</th>
+                      <th className="text-right py-1.5 px-2 font-semibold text-primary-400">Simulated Policy</th>
+                      <th className="text-right py-1.5 px-2 font-semibold">Absolute Δ</th>
+                      <th className="text-right py-1.5 px-2 font-semibold">SDG 2030 Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/40 font-mono text-[11px]">
+                  <tbody className="divide-y divide-border/40 font-mono text-[10px]">
                     {Object.entries(PRIMARY_OUTCOME_CONFIGS).map(([key, cfg]) => {
                       const base = activeBaseline[key];
                       const sim = results?.expected_values?.[key];

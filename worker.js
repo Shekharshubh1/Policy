@@ -33,9 +33,11 @@ export default {
     // Optional reverse proxy to backend if BACKEND_API_URL is configured
     if (isApiRoute && env.BACKEND_API_URL) {
       const targetUrl = new URL(url.pathname + url.search, env.BACKEND_API_URL);
+      const headers = new Headers(request.headers);
+      headers.set("Host", targetUrl.host);
       const proxyRequest = new Request(targetUrl.toString(), {
         method: request.method,
-        headers: request.headers,
+        headers: headers,
         body: request.method !== "GET" && request.method !== "HEAD" ? request.body : null,
         redirect: "follow"
       });

@@ -1,0 +1,14 @@
+{
+  "name": "policy-dis-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "National Healthcare Policy Decision Intelligence System (NHP-DIS)",
+  "workspaces": [
+    "national_health_policy/frontend"
+  ],
+  "scripts": {
+    "build": "npm --workspace national_health_policy/frontend run build",
+    "deploy": "npx wrangler deploy",
+    "preview": "npm --workspace national_health_policy/frontend run preview"
+  }
+}

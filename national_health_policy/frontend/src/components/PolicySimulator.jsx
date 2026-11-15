@@ -3,17 +3,21 @@ import {
   Sliders,
   MapPin,
   RotateCcw,
-  FileText,
-  CheckCircle2,
   TrendingUp,
   TrendingDown,
   Layers,
   Download,
-  Search,
-  Filter,
   Activity,
   BarChart2,
-  X
+  X,
+  Sparkles,
+  Check,
+  AlertTriangle,
+  ArrowRight,
+  ShieldAlert,
+  GitBranch,
+  Table,
+  Cpu
 } from "lucide-react";
 import {
   apiClient,
@@ -39,7 +43,7 @@ function Spinner({ size = 16 }) {
   return (
     <svg
       style={{ width: size, height: size }}
-      className="animate-spin text-primary-400"
+      className="animate-spin text-primary-400 shrink-0"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -50,122 +54,68 @@ function Spinner({ size = 16 }) {
   );
 }
 
-function DistributionBar({ label, pct, color }) {
-  const percentage = Math.round((pct ?? 0) * 100);
+// Compact Probability Sparkline / Multi-segment Bar
+function ProbabilityShiftBar({ dist }) {
+  const low = Math.round((dist?.Low ?? 0) * 100);
+  const med = Math.round((dist?.Medium ?? 0) * 100);
+  const high = Math.round((dist?.High ?? 0) * 100);
+
   return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className="w-10 text-text-tertiary shrink-0 text-[10px] font-mono">{label}</span>
-      <div className="flex-1 bg-surface-elevated rounded-full h-1.5 overflow-hidden">
-        <div
-          className="h-1.5 rounded-full transition-all duration-300"
-          style={{ width: `${percentage}%`, backgroundColor: color }}
-        />
+    <div className="space-y-1">
+      <div className="h-1.5 w-full bg-surface-elevated rounded-full flex overflow-hidden">
+        <div style={{ width: `${low}%` }} className="bg-sky-500 transition-all" title={`Low: ${low}%`} />
+        <div style={{ width: `${med}%` }} className="bg-amber-500 transition-all" title={`Medium: ${med}%`} />
+        <div style={{ width: `${high}%` }} className="bg-emerald-500 transition-all" title={`High: ${high}%`} />
       </div>
-      <span className="w-8 text-right font-mono text-[10px] text-text-secondary">
-        {percentage}%
-      </span>
+      <div className="flex justify-between text-[9px] font-mono text-text-tertiary">
+        <span className="text-sky-400">L: {low}%</span>
+        <span className="text-amber-400">M: {med}%</span>
+        <span className="text-emerald-400">H: {high}%</span>
+      </div>
     </div>
   );
 }
 
-function OutcomeCard({ config, value, distribution, baseline }) {
+// Compact Outcome Card
+function CompactOutcomeCard({ config, value, distribution, baseline }) {
   const distKey = config.key + "_bin";
   const dist = distribution?.[distKey] ?? {};
-  const diff =
-    baseline != null && value != null ? (value - baseline).toFixed(1) : null;
+  const diff = baseline != null && value != null ? (value - baseline).toFixed(1) : null;
   const isPositiveDiff = diff !== null && parseFloat(diff) > 0;
   const isGood = config.highIsGood ? isPositiveDiff : (diff !== null && parseFloat(diff) < 0);
-  const diffColor =
-    diff === null
-      ? "var(--text-muted)"
-      : isGood
-      ? "var(--semantic-positive)"
-      : "var(--semantic-negative)";
-  const diffLabel =
-    diff !== null
-      ? `${isPositiveDiff ? "+" : ""}${diff} vs baseline`
-      : "—";
-
-  // SDG target check
+  const diffColor = diff === null ? "var(--text-muted)" : isGood ? "var(--semantic-positive)" : "var(--semantic-negative)";
   const meetsTarget = config.target != null && (config.highIsGood ? value >= config.target : value <= config.target);
 
   return (
-    <div className="bg-surface border border-border rounded-xl p-4 flex flex-col justify-between space-y-3 shadow-sm hover:border-border/80 transition-colors">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
-            <span>{config.label}</span>
-            {meetsTarget && (
-              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800">
-                SDG Met
-              </span>
-            )}
-          </div>
-          {config.unit && (
-            <div className="text-[11px] text-text-tertiary font-mono">{config.unit}</div>
-          )}
+    <div className="bg-surface border border-border rounded-lg p-3 flex flex-col justify-between space-y-2 hover:border-border/80 transition-colors shadow-sm">
+      <div className="flex items-start justify-between gap-1">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold text-text-primary truncate">{config.label}</div>
+          <div className="text-[10px] text-text-tertiary font-mono">{config.unit}</div>
         </div>
-        <div className="text-right">
-          <div
-            className="text-xl font-bold font-mono"
-            style={{ color: config.color || "var(--accent-highlight)" }}
-          >
+        <div className="text-right shrink-0">
+          <div className="text-lg font-bold font-mono" style={{ color: config.color || "var(--accent-highlight)" }}>
             {formatNumber(value, config.decimals ?? 1)}
           </div>
           {diff !== null && (
-            <div className="text-[10px] font-mono font-medium mt-0.5 flex items-center justify-end gap-1" style={{ color: diffColor }}>
+            <div className="text-[10px] font-mono font-medium flex items-center justify-end gap-0.5" style={{ color: diffColor }}>
               {isGood ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              <span>{diffLabel}</span>
+              <span>{isPositiveDiff ? "+" : ""}{diff}</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Posterior belief distribution */}
-      {Object.keys(dist).length > 0 && (
-        <div className="space-y-1 pt-2 border-t border-border/60">
-          <div className="text-[9px] uppercase tracking-wider text-text-tertiary font-mono">
-            Bayesian Posterior Belief (Dirichlet Prior)
-          </div>
-          <DistributionBar label="Low" pct={dist.Low ?? 0} color="#3b82f6" />
-          <DistributionBar label="Med" pct={dist.Medium ?? 0} color="#f59e0b" />
-          <DistributionBar label="High" pct={dist.High ?? 0} color="#10b981" />
+      <div className="pt-1.5 border-t border-border/50">
+        <div className="flex items-center justify-between text-[9px] font-mono text-text-tertiary mb-1">
+          <span>Posterior Shift</span>
+          {meetsTarget ? (
+            <span className="text-emerald-400 font-semibold">SDG Met</span>
+          ) : (
+            <span className="text-amber-400 font-semibold">{config.target != null ? `SDG: ${config.target}` : "Active"}</span>
+          )}
         </div>
-      )}
-    </div>
-  );
-}
-
-function CausalPathways({ pathways }) {
-  if (!pathways || pathways.length === 0) return null;
-
-  return (
-    <div className="bg-surface border border-border rounded-xl p-4 space-y-2.5">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
-          <Activity className="w-3.5 h-3.5 text-primary-400" />
-          Active Causal Pathways (Pearl's do-calculus chain)
-        </h3>
-        <span className="text-[10px] font-mono text-text-tertiary">{pathways.length} transmission routes</span>
-      </div>
-      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-        {pathways.map((pathway, idx) => (
-          <div
-            key={idx}
-            className="bg-surface-elevated/40 rounded-lg p-2.5 border border-border/60 flex flex-wrap items-center gap-1.5 text-xs font-mono"
-          >
-            {pathway.path.map((node, nIdx) => (
-              <span key={nIdx} className="flex items-center gap-1.5">
-                <span className="bg-surface-elevated border border-border rounded px-2 py-0.5 text-text-primary text-[10px]">
-                  {formatLabel(node)}
-                </span>
-                {nIdx < pathway.path.length - 1 && (
-                  <span className="text-primary-400 font-bold text-xs">→</span>
-                )}
-              </span>
-            ))}
-          </div>
-        ))}
+        <ProbabilityShiftBar dist={dist} />
       </div>
     </div>
   );
@@ -177,7 +127,7 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
   const [error, setError] = useState(null);
   const [results, setResults] = useState(null);
 
-  // District selector & dynamic national averages state
+  // District selector state
   const [allDistricts, setAllDistricts] = useState([]);
   const [statesList, setStatesList] = useState([]);
   const [selectedState, setSelectedState] = useState("");
@@ -186,10 +136,16 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
   const [activeDistrictProfile, setActiveDistrictProfile] = useState(null);
   const [nationalAverages, setNationalAverages] = useState(null);
 
-  // Sector filter tabs
-  const [activeSector, setActiveSector] = useState("all");
+  // AI Recommendation State
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiRecommendations, setAiRecommendations] = useState(null);
+  const [aiError, setAiError] = useState(null);
 
-  // Load district catalog and dynamic national baseline averages from government open data
+  // Sector filter tabs & Right Panel Active Tab
+  const [activeSector, setActiveSector] = useState("all");
+  const [rightPanelTab, setRightPanelTab] = useState("outcomes"); // 'outcomes' | 'causal' | 'delta'
+
+  // Load district catalog and dynamic national baseline averages
   useEffect(() => {
     async function loadDistrictsCatalog() {
       try {
@@ -209,7 +165,7 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
           setNationalAverages(sumRes.national_averages);
         }
 
-        // Auto-run baseline simulation on initial load so user immediately sees Bayesian posteriors
+        // Auto-run baseline simulation on initial mount
         apiClient.simulate(DEFAULT_POLICY_INPUTS).then((res) => setResults(res)).catch(() => {});
       } catch (e) {
         console.warn("Could not load district catalog for simulator:", e);
@@ -230,9 +186,9 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
     setActiveDistrictProfile(dist);
     setSelectedDistrictName(dist.district_name);
     setSelectedState(dist.state_name || "");
+    setAiRecommendations(null);
 
     const newInputs = { ...DEFAULT_POLICY_INPUTS };
-    // Map known district metrics into slider inputs
     if (dist.specialist_availability != null) newInputs.specialist_availability = dist.specialist_availability;
     if (dist.doctor_ratio != null) newInputs.doctor_ratio = dist.doctor_ratio;
     if (dist.institutional_delivery_rate != null) newInputs.institutional_delivery_rate = dist.institutional_delivery_rate;
@@ -247,6 +203,9 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
 
     newInputs.district_name = dist.district_name;
     setInputs(newInputs);
+
+    // Auto-run simulation on the district's baseline
+    apiClient.simulate(newInputs).then((res) => setResults(res)).catch(() => {});
   };
 
   const handleSelectDistrict = async (name) => {
@@ -254,12 +213,14 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
       setActiveDistrictProfile(null);
       setSelectedDistrictName("");
       setInputs({ ...DEFAULT_POLICY_INPUTS });
+      setAiRecommendations(null);
+      apiClient.simulate(DEFAULT_POLICY_INPUTS).then((res) => setResults(res)).catch(() => {});
       return;
     }
     setDistrictLoading(true);
     try {
       const res = await apiClient.district(name);
-      const latest = res?.latest || res;
+      const latest = res?.latest_data || res?.latest || res;
       if (latest) {
         applyDistrictBaseline(latest);
       }
@@ -270,16 +231,46 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
     }
   };
 
+  // Fetch AI Policy Lever Recommendations via Groq LLaMA-3.3-70B
+  const handleFetchAiRecommendations = async () => {
+    if (!selectedDistrictName) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const recs = await apiClient.districtRecommendations(selectedDistrictName);
+      if (recs && recs.status === "success") {
+        setAiRecommendations(recs);
+      } else {
+        setAiError("Could not retrieve AI recommendations");
+      }
+    } catch (err) {
+      setAiError(err?.message || "Failed to generate AI policy advice");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // One-click apply AI suggested levers to sliders and re-simulate
+  const handleApplyAiLevers = () => {
+    if (!aiRecommendations?.recommended_levers) return;
+    const recs = aiRecommendations.recommended_levers;
+    const updated = { ...inputs, ...recs };
+    setInputs(updated);
+    apiClient.simulate(updated).then((res) => setResults(res)).catch(() => {});
+  };
+
   const handleSliderChange = useCallback((key, value) => {
     setInputs((prev) => ({ ...prev, [key]: parseFloat(value) }));
   }, []);
 
   const handleApplyPreset = (preset) => {
-    setInputs((prev) => ({
-      ...prev,
+    const updated = {
+      ...inputs,
       ...preset.inputs,
       district_name: activeDistrictProfile?.district_name || null,
-    }));
+    };
+    setInputs(updated);
+    apiClient.simulate(updated).then((res) => setResults(res)).catch(() => {});
   };
 
   const handleRunSimulation = useCallback(async () => {
@@ -299,11 +290,12 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
     setActiveDistrictProfile(null);
     setSelectedDistrictName("");
     setInputs({ ...DEFAULT_POLICY_INPUTS });
-    setResults(null);
+    setAiRecommendations(null);
     if (onClearDistrictContext) onClearDistrictContext();
+    apiClient.simulate(DEFAULT_POLICY_INPUTS).then((res) => setResults(res)).catch(() => {});
   };
 
-  // Compute active baseline dynamically from selected district or official national averages
+  // Active baseline calculations
   const activeBaseline = useMemo(() => {
     if (activeDistrictProfile) {
       return {
@@ -318,7 +310,6 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
     return nationalAverages || {};
   }, [activeDistrictProfile, nationalAverages]);
 
-  // Filtered districts for dropdown
   const filteredDistricts = useMemo(() => {
     if (!selectedState) return allDistricts;
     return allDistricts.filter(
@@ -326,7 +317,6 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
     );
   }, [allDistricts, selectedState]);
 
-  // Sector filtering for sliders
   const filteredSliders = useMemo(() => {
     if (activeSector === "all") return INPUT_SLIDER_CONFIGS;
     if (activeSector === "hrh") return INPUT_SLIDER_CONFIGS.filter((s) => s.domain === "Human Resources");
@@ -337,14 +327,33 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
     return INPUT_SLIDER_CONFIGS;
   }, [activeSector]);
 
-  // Download simulation briefing memo
+  // Grouped Causal Pathways
+  const groupedPathways = useMemo(() => {
+    if (!results?.causal_pathways) return [];
+    const groups = {
+      "Human Resources & Staffing": [],
+      "Clinical Care & Facilities": [],
+      "Social & Environmental Determinants": [],
+      "Digital Health & Governance": []
+    };
+    results.causal_pathways.forEach((p) => {
+      const type = p.origin_type || "";
+      if (type.includes("Human")) groups["Human Resources & Staffing"].push(p);
+      else if (type.includes("Environmental") || type.includes("Social")) groups["Social & Environmental Determinants"].push(p);
+      else if (type.includes("Digital")) groups["Digital Health & Governance"].push(p);
+      else groups["Clinical Care & Facilities"].push(p);
+    });
+    return Object.entries(groups).filter(([_, paths]) => paths.length > 0);
+  }, [results?.causal_pathways]);
+
+  // Export memo handler
   const handleExportMemo = () => {
     const memo = `# Policy Decision Briefing Memo
 Generated: ${new Date().toLocaleString()}
 Context: ${activeDistrictProfile ? `${activeDistrictProfile.district_name}, ${activeDistrictProfile.state_name}` : "National Baseline (India 698 Districts)"}
 Methodology: Pearl's SCM (do-calculus) Exact Inference via Variable Elimination (DiscreteBayesianNetwork)
 
-## 1. Simulated Policy Interventions Applied:
+## 1. Active Interventions Applied:
 ${Object.entries(inputs)
   .filter(([k]) => k !== "district_name")
   .map(([k, v]) => `- ${formatLabel(k)}: ${v}`)
@@ -359,46 +368,43 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
     return `- ${cfg.label}: Baseline = ${baselineVal}, Simulated = ${predictedVal != null ? predictedVal.toFixed(1) : "—"} (Δ ${diff} ${cfg.unit})`;
   })
   .join("\n")}
-
-## 3. Active Causal Transmission Pathways:
-${results?.causal_pathways?.map((p, idx) => `Pathway ${idx + 1}: ${p.path.map(formatLabel).join(" → ")}`).join("\n") || "Direct propagation"}
 `;
 
     const blob = new Blob([memo], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Policy_Briefing_Memo_${activeDistrictProfile?.district_name || "National"}_${Date.now()}.md`;
+    a.download = `Policy_Memo_${activeDistrictProfile?.district_name || "National"}.md`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="space-y-4">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border">
+    <div className="space-y-3">
+      {/* ── Compact Header & Action Strip ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-border">
         <div>
-          <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            <Sliders className="w-5 h-5 text-primary-400" />
+          <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
+            <Sliders className="w-4 h-4 text-primary-400" />
             Causal Policy Intervention Simulator
           </h2>
-          <p className="text-xs text-text-secondary">
-            Simulate prospective structural interventions (Pearl's $do$-calculus) conditioned on real NFHS-5 district baselines.
+          <p className="text-[11px] text-text-secondary">
+            Simulate prospective structural interventions (Pearl's do-calculus) conditioned on empirical NFHS-5 district baselines.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           {results && (
             <button
               onClick={handleExportMemo}
-              className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-elevated rounded border border-border transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-2.5 py-1 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-elevated rounded border border-border transition-colors flex items-center gap-1 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export Policy Memo</span>
+              <span>Memo</span>
             </button>
           )}
           <button
             onClick={handleReset}
-            className="px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-elevated rounded border border-border transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="px-2.5 py-1 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-elevated rounded border border-border transition-colors flex items-center gap-1 cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset</span>
@@ -407,19 +413,19 @@ ${results?.causal_pathways?.map((p, idx) => `Pathway ${idx + 1}: ${p.path.map(fo
       </div>
 
       {error && (
-        <div className="bg-rose-950/40 border border-rose-800 text-rose-300 p-3 rounded-lg text-xs">
+        <div className="bg-rose-950/40 border border-rose-800 text-rose-300 p-2.5 rounded-lg text-xs">
           {error}
         </div>
       )}
 
-      {/* Real District Selector & Policy Presets Bar */}
-      <div className="bg-surface rounded-xl border border-border p-3.5 space-y-3">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      {/* ── District Selector & Presets Strip ── */}
+      <div className="bg-surface rounded-xl border border-border p-2.5 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           {/* District Picker */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-primary-400" />
-              Simulate Real District:
+            <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1">
+              <MapPin className="w-3 h-3 text-primary-400" />
+              District:
             </span>
 
             {/* State Filter */}
@@ -429,13 +435,11 @@ ${results?.causal_pathways?.map((p, idx) => `Pathway ${idx + 1}: ${p.path.map(fo
                 setSelectedState(e.target.value);
                 setSelectedDistrictName("");
               }}
-              className="bg-surface-elevated border border-border rounded px-2.5 py-1 text-xs text-text-primary focus:outline-none focus:border-border-focus"
+              className="bg-surface-elevated border border-border rounded px-2 py-0.5 text-xs text-text-primary focus:outline-none"
             >
-              <option value="">All States/UTs ({statesList.length})</option>
+              <option value="">All States ({statesList.length})</option>
               {statesList.map((st) => (
-                <option key={st} value={st}>
-                  {st}
-                </option>
+                <option key={st} value={st}>{st}</option>
               ))}
             </select>
 
@@ -444,7 +448,7 @@ ${results?.causal_pathways?.map((p, idx) => `Pathway ${idx + 1}: ${p.path.map(fo
               value={selectedDistrictName}
               onChange={(e) => handleSelectDistrict(e.target.value)}
               disabled={districtLoading}
-              className="bg-surface-elevated border border-border rounded px-2.5 py-1 text-xs text-text-primary focus:outline-none focus:border-border-focus min-w-[180px]"
+              className="bg-surface-elevated border border-border rounded px-2 py-0.5 text-xs text-text-primary focus:outline-none min-w-[170px]"
             >
               <option value="">National Baseline (698 Districts)</option>
               {filteredDistricts.map((d) => (
@@ -455,34 +459,34 @@ ${results?.causal_pathways?.map((p, idx) => `Pathway ${idx + 1}: ${p.path.map(fo
             </select>
 
             {districtLoading && <Spinner size={14} />}
+
+            {activeDistrictProfile && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950/60 text-emerald-400 border border-emerald-800">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                {activeDistrictProfile.district_name}, {activeDistrictProfile.state_name} (NFHS-5)
+                <button onClick={() => handleSelectDistrict("")} className="hover:text-emerald-200 ml-0.5">
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </span>
+            )}
           </div>
 
-          {/* Active District Status Badge */}
-          {activeDistrictProfile ? (
-            <div className="flex items-center gap-2 bg-primary-950/40 border border-primary-800/80 rounded-full px-3 py-1 text-xs font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              <span className="text-text-primary font-semibold">
-                {activeDistrictProfile.district_name}, {activeDistrictProfile.state_name}
-              </span>
-              <span className="text-text-tertiary">| NFHS-5 Empirical Data</span>
-              <button
-                onClick={() => handleSelectDistrict("")}
-                className="text-text-tertiary hover:text-text-primary ml-1"
-                title="Clear district context"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ) : (
-            <span className="text-[11px] font-mono text-text-tertiary">
-              Baseline: National Population Averages
-            </span>
+          {/* AI Advisor Button (Appears when district selected) */}
+          {selectedDistrictName && (
+            <button
+              onClick={handleFetchAiRecommendations}
+              disabled={aiLoading}
+              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-700/60 flex items-center gap-1.5 transition-colors cursor-pointer select-none"
+            >
+              {aiLoading ? <Spinner size={13} /> : <Sparkles className="w-3.5 h-3.5 text-indigo-400" />}
+              <span>{aiLoading ? "Consulting AI Advisor..." : "AI Health Need Diagnosis & Lever Suggestions"}</span>
+            </button>
           )}
         </div>
 
-        {/* Policy Presets Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-border/40 pb-0.5">
-          <span className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+        {/* Policy Presets */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pt-1.5 border-t border-border/40 pb-0.5 text-xs">
+          <span className="text-[10px] font-semibold text-text-tertiary uppercase tracking-wider shrink-0 flex items-center gap-1">
             <Layers className="w-3 h-3" />
             Presets:
           </span>
@@ -490,8 +494,7 @@ ${results?.causal_pathways?.map((p, idx) => `Pathway ${idx + 1}: ${p.path.map(fo
             <button
               key={preset.id}
               onClick={() => handleApplyPreset(preset)}
-              className="px-2.5 py-1 rounded-full bg-surface-elevated hover:bg-surface-elevated/70 border border-border text-[11px] text-text-secondary hover:text-text-primary whitespace-nowrap transition-colors cursor-pointer select-none"
-              title={preset.description}
+              className="px-2 py-0.5 rounded-full bg-surface-elevated hover:bg-surface-elevated/80 border border-border text-[10px] text-text-secondary hover:text-text-primary whitespace-nowrap transition-colors cursor-pointer"
             >
               {preset.name}
             </button>
@@ -499,24 +502,111 @@ ${results?.causal_pathways?.map((p, idx) => `Pathway ${idx + 1}: ${p.path.map(fo
         </div>
       </div>
 
-      {/* Main Split Layout with Independent Internal Scroll Containers */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left Column: Levers Panel (5 Cols) with internal scroll */}
-        <div className="lg:col-span-5 bg-surface rounded-xl border border-border p-4 flex flex-col max-h-[calc(100vh-220px)] min-h-[580px]">
-          {/* Header & Sector Tabs */}
-          <div className="pb-3 border-b border-border space-y-2.5 shrink-0">
+      {/* ── "Before" Actual Empirical Baseline & AI Policy Recommendations Strip ── */}
+      {activeDistrictProfile && (
+        <div className="bg-surface rounded-xl border border-border p-3 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+              <span>{activeDistrictProfile.district_name} — "Before" Actual Empirical Data (NFHS-5 / RHS)</span>
+            </div>
+            <span className="text-[10px] font-mono text-text-tertiary">Official Survey Baseline</span>
+          </div>
+
+          {/* Empirical Benchmark Badges Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+            {[
+              { label: "Maternal Mortality", val: activeDistrictProfile.maternal_mortality_rate, unit: "per 100k", nat: 103.0, lowerIsGood: true },
+              { label: "Infant Mortality", val: activeDistrictProfile.infant_mortality_rate, unit: "per 1k", nat: 32.6, lowerIsGood: true },
+              { label: "Doctor Ratio", val: activeDistrictProfile.doctor_ratio, unit: "per 10k", nat: 7.5, lowerIsGood: false },
+              { label: "Specialist Posts", val: activeDistrictProfile.specialist_availability, unit: "%", nat: 35.0, lowerIsGood: false },
+              { label: "Institutional Births", val: activeDistrictProfile.institutional_delivery_rate, unit: "%", nat: 88.6, lowerIsGood: false },
+              { label: "Full Immunization", val: activeDistrictProfile.immunization_rate, unit: "%", nat: 77.0, lowerIsGood: false }
+            ].map((m, idx) => {
+              const diff = m.val != null && m.nat != null ? m.val - m.nat : 0;
+              const isDeficit = m.lowerIsGood ? diff > 0 : diff < 0;
+              return (
+                <div key={idx} className="bg-surface-elevated/50 border border-border/60 rounded-lg p-2 font-mono text-center">
+                  <div className="text-[10px] text-text-tertiary truncate">{m.label}</div>
+                  <div className="text-sm font-bold text-text-primary my-0.5">
+                    {formatNumber(m.val, 1)} <span className="text-[9px] font-normal text-text-tertiary">{m.unit}</span>
+                  </div>
+                  <div className={`text-[9px] font-semibold ${isDeficit ? "text-rose-400" : "text-emerald-400"}`}>
+                    {isDeficit ? "Deficit vs Nat." : "At/Above Nat."}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* AI Recommended Levers Card (LLaMA-3.3-70B on Groq) */}
+          {aiRecommendations && (
+            <div className="bg-indigo-950/20 border border-indigo-700/50 rounded-lg p-3 space-y-2 mt-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-indigo-800/40">
+                <div className="flex items-center gap-1.5">
+                  <Cpu className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="text-xs font-semibold text-indigo-200">
+                    AI Strategic Policy Diagnosis (Groq LLaMA-3.3-70B)
+                  </span>
+                </div>
+                <button
+                  onClick={handleApplyAiLevers}
+                  className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm shrink-0"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Apply AI Recommended Levers & Simulate</span>
+                </button>
+              </div>
+
+              <p className="text-[11px] text-text-secondary leading-relaxed">
+                {aiRecommendations.diagnostic_summary}
+              </p>
+
+              {/* Recommended Levers Pills */}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {Object.entries(aiRecommendations.recommended_levers || {}).map(([lever, recVal]) => {
+                  const currentVal = inputs[lever];
+                  return (
+                    <span
+                      key={lever}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-elevated border border-border text-[10px] font-mono text-text-primary"
+                    >
+                      <span className="text-text-secondary">{formatLabel(lever)}:</span>
+                      <span className="text-text-tertiary line-through">{formatNumber(currentVal, 1)}</span>
+                      <ArrowRight className="w-2.5 h-2.5 text-indigo-400" />
+                      <span className="text-indigo-300 font-bold">{formatNumber(recVal, 1)}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Main Viewport-Constrained Split Console ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        {/* Left: Levers Console (5 cols) with internal scroll container */}
+        <div className="lg:col-span-5 bg-surface rounded-xl border border-border p-3 flex flex-col h-[560px]">
+          {/* Levers Header */}
+          <div className="pb-2 border-b border-border space-y-2 shrink-0">
             <div className="flex items-center justify-between">
               <div className="text-xs font-semibold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-primary-400" />
                 Intervention Levers ({filteredSliders.length})
               </div>
-              <span className="text-[10px] font-mono text-text-tertiary">
-                Continuous $\to$ Dirichlet Quantiles
-              </span>
+              <button
+                onClick={handleRunSimulation}
+                disabled={loading}
+                className="px-2.5 py-1 bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white font-semibold rounded text-[11px] transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm select-none"
+              >
+                {loading ? <Spinner size={12} /> : <Activity className="w-3 h-3" />}
+                <span>Simulate</span>
+              </button>
             </div>
 
             {/* Sector Sub-Tabs */}
-            <div className="flex gap-1 overflow-x-auto pb-1 text-[11px]">
+            <div className="flex gap-1 overflow-x-auto pb-0.5 text-xs">
               {[
                 { id: "all", label: "All" },
                 { id: "hrh", label: "Workforce" },
@@ -528,7 +618,7 @@ ${results?.causal_pathways?.map((p, idx) => `Pathway ${idx + 1}: ${p.path.map(fo
                 <button
                   key={tab.id}
                   onClick={() => setActiveSector(tab.id)}
-                  className={`px-2.5 py-1 rounded text-[11px] font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap transition-colors cursor-pointer ${
                     activeSector === tab.id
                       ? "bg-primary-600 text-white font-semibold"
                       : "bg-surface-elevated text-text-secondary hover:text-text-primary border border-border/50"
@@ -540,8 +630,8 @@ ${results?.causal_pathways?.map((p, idx) => `Pathway ${idx + 1}: ${p.path.map(fo
             </div>
           </div>
 
-          {/* Scrollable Sliders Container */}
-          <div className="flex-1 overflow-y-auto pr-1 py-3 space-y-2.5">
+          {/* Scrollable Sliders List with compact craft */}
+          <div className="flex-1 overflow-y-auto pr-1 py-2 space-y-2">
             {filteredSliders.map((cfg) => {
               const val = inputs[cfg.key] ?? cfg.min;
               const baselineVal = activeDistrictProfile?.[cfg.key] ?? DEFAULT_POLICY_INPUTS[cfg.key];
@@ -550,18 +640,18 @@ ${results?.causal_pathways?.map((p, idx) => `Pathway ${idx + 1}: ${p.path.map(fo
               return (
                 <div
                   key={cfg.key}
-                  className={`p-2.5 rounded-lg border transition-colors ${
+                  className={`p-2 rounded-lg border transition-colors ${
                     isModified
                       ? "bg-primary-950/30 border-primary-500/50"
-                      : "bg-surface-elevated/40 border-border/60 hover:border-border"
+                      : "bg-surface-elevated/30 border-border/60 hover:border-border"
                   }`}
                 >
                   <div className="flex justify-between items-center text-xs mb-1">
-                    <span className="font-medium text-text-primary text-[12px]">{cfg.label}</span>
-                    <div className="flex items-center gap-1.5 font-mono">
-                      <span className="text-primary-400 font-bold text-[12px]">{cfg.format(val)}</span>
+                    <span className="font-medium text-text-primary text-[11px] truncate">{cfg.label}</span>
+                    <div className="flex items-center gap-1 font-mono text-[11px]">
+                      <span className="text-primary-400 font-bold">{cfg.format(val)}</span>
                       {isModified && (
-                        <span className="text-[10px] text-text-tertiary">
+                        <span className="text-[9px] text-text-tertiary">
                           (base: {cfg.format(baselineVal)})
                         </span>
                       )}
@@ -577,7 +667,7 @@ ${results?.causal_pathways?.map((p, idx) => `Pathway ${idx + 1}: ${p.path.map(fo
                     className="w-full cursor-pointer h-1.5"
                     style={{ accentColor: "var(--accent-highlight)" }}
                   />
-                  <div className="flex justify-between text-[10px] text-text-tertiary font-mono mt-1">
+                  <div className="flex justify-between text-[9px] text-text-tertiary font-mono mt-0.5">
                     <span>{cfg.domain}</span>
                     <span>{cfg.unit}</span>
                   </div>
@@ -585,149 +675,164 @@ ${results?.causal_pathways?.map((p, idx) => `Pathway ${idx + 1}: ${p.path.map(fo
               );
             })}
           </div>
-
-          {/* Sticky Simulation Action Button */}
-          <div className="pt-3 border-t border-border shrink-0">
-            <button
-              onClick={handleRunSimulation}
-              disabled={loading}
-              className="w-full py-2.5 bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm select-none"
-            >
-              {loading ? <Spinner size={16} /> : <Activity className="w-4 h-4" />}
-              <span>{loading ? "Propagating Causal Network..." : "Simulate Causal Effect (do-calculus)"}</span>
-            </button>
-          </div>
         </div>
 
-        {/* Right Column: Outcomes & Impact Intelligence (7 Cols) with internal scroll */}
-        <div className="lg:col-span-7 flex flex-col max-h-[calc(100vh-220px)] min-h-[580px] overflow-y-auto pr-1 space-y-4">
-          {results ? (
-            <>
-              {/* Context Summary Header */}
-              <div className="bg-surface rounded-xl border border-border p-3.5 flex flex-wrap items-center justify-between gap-2 shrink-0">
-                <div className="flex items-center gap-2">
-                  <BarChart2 className="w-4 h-4 text-primary-400" />
-                  <span className="text-xs font-semibold text-text-primary">
-                    Simulation Results: {activeDistrictProfile ? activeDistrictProfile.district_name : "National Aggregate"}
-                  </span>
-                </div>
-                <div className="text-[11px] font-mono text-text-tertiary">
-                  Exact Inference • Variable Elimination • 37 Nodes
-                </div>
-              </div>
-
-              {/* 6 Outcome KPI Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0">
-                {Object.entries(PRIMARY_OUTCOME_CONFIGS).map(([key, cfg]) => (
-                  <OutcomeCard
-                    key={key}
-                    config={{ ...cfg, key }}
-                    value={results?.expected_values?.[key]}
-                    distribution={results?.distributions}
-                    baseline={activeBaseline[key]}
-                  />
-                ))}
-              </div>
-
-              {/* Causal Pathways Chain */}
-              {results?.causal_pathways?.length > 0 && (
-                <div className="shrink-0">
-                  <CausalPathways pathways={results.causal_pathways} />
-                </div>
-              )}
-
-              {/* Baseline vs Intervention Comparison Table */}
-              <div className="bg-surface rounded-xl border border-border p-4 space-y-3 shrink-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    Baseline vs Policy Intervention Comparison
-                  </h3>
-                  <span className="text-[10px] font-mono text-text-tertiary">
-                    {activeDistrictProfile ? "Empirical NFHS-5 Delta" : "National Delta"}
-                  </span>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-border text-text-secondary font-mono text-[11px]">
-                        <th className="text-left py-2 px-2.5 font-semibold">Health Indicator</th>
-                        <th className="text-right py-2 px-2.5 font-semibold">Baseline</th>
-                        <th className="text-right py-2 px-2.5 font-semibold text-primary-400">Simulated Policy</th>
-                        <th className="text-right py-2 px-2.5 font-semibold">Absolute Δ</th>
-                        <th className="text-right py-2 px-2.5 font-semibold">SDG 2030 Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/40 font-mono">
-                      {Object.entries(PRIMARY_OUTCOME_CONFIGS).map(([key, cfg]) => {
-                        const base = activeBaseline[key];
-                        const sim = results?.expected_values?.[key];
-                        const diff = base != null && sim != null ? (sim - base).toFixed(1) : null;
-                        const isPos = diff !== null && parseFloat(diff) > 0;
-                        const isGood = cfg.highIsGood ? isPos : (diff !== null && parseFloat(diff) < 0);
-                        const meetsTarget = cfg.target != null && (cfg.highIsGood ? sim >= cfg.target : sim <= cfg.target);
-
-                        return (
-                          <tr key={key} className="hover:bg-surface-elevated/30">
-                            <td className="py-2.5 px-2.5 font-sans font-medium text-text-primary">
-                              {cfg.label}
-                            </td>
-                            <td className="text-right py-2.5 px-2.5 text-text-secondary">
-                              {formatNumber(base, 1)}
-                            </td>
-                            <td className="text-right py-2.5 px-2.5 text-text-primary font-bold">
-                              {formatNumber(sim, 1)}
-                            </td>
-                            <td
-                              className="text-right py-2.5 px-2.5 font-bold"
-                              style={{
-                                color: diff === null ? "var(--text-muted)" : isGood ? "var(--semantic-positive)" : "var(--semantic-negative)",
-                              }}
-                            >
-                              {diff !== null ? `${isPos ? "+" : ""}${diff}` : "—"}
-                            </td>
-                            <td className="text-right py-2.5 px-2.5">
-                              {meetsTarget ? (
-                                <span className="inline-block text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800">
-                                  On Track
-                                </span>
-                              ) : (
-                                <span className="inline-block text-[10px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800">
-                                  Gap ({cfg.target != null ? `Target: ${cfg.target}` : "—"})
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-          ) : (
-            /* Empty State */
-            <div className="bg-surface rounded-xl border border-border p-12 text-center text-text-tertiary space-y-3 flex flex-col items-center justify-center my-auto">
-              <div className="w-12 h-12 rounded-full bg-surface-elevated flex items-center justify-center text-primary-400 mb-1">
-                <Sliders className="w-6 h-6" />
-              </div>
-              <div className="text-sm font-semibold text-text-primary">Ready to Simulate</div>
-              <p className="text-xs max-w-md mx-auto leading-relaxed text-text-secondary">
-                Select an authentic Indian district from the dropdown or pick a policy preset, adjust any specific health system levers, and click <strong>Simulate Causal Effect</strong> to propagate interventions across Pearl's causal Bayesian network.
-              </p>
-              <div className="pt-2">
-                <button
-                  onClick={handleRunSimulation}
-                  disabled={loading}
-                  className="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-lg text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
-                >
-                  <Activity className="w-3.5 h-3.5" />
-                  <span>Run Initial National Baseline Simulation</span>
-                </button>
-              </div>
+        {/* Right: Policy Intelligence Hub (7 cols) with Tab Controller */}
+        <div className="lg:col-span-7 bg-surface rounded-xl border border-border p-3 flex flex-col h-[560px]">
+          {/* Sub-View Navigation Tabs */}
+          <div className="flex items-center justify-between pb-2 border-b border-border shrink-0">
+            <div className="flex items-center gap-1">
+              {[
+                { id: "outcomes", label: "Simulated Outcomes", icon: BarChart2 },
+                { id: "causal", label: "Causal Transmission", icon: GitBranch, count: results?.causal_pathways?.length },
+                { id: "delta", label: "Delta & SDG Matrix", icon: Table },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setRightPanelTab(tab.id)}
+                    className={`px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      rightPanelTab === tab.id
+                        ? "bg-surface-elevated text-text-primary border border-border font-semibold shadow-sm"
+                        : "text-text-tertiary hover:text-text-secondary"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{tab.label}</span>
+                    {tab.count != null && (
+                      <span className="text-[9px] px-1 rounded-full bg-surface border border-border text-text-secondary">
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-          )}
+
+            <div className="text-[10px] font-mono text-text-tertiary hidden sm:block">
+              {activeDistrictProfile ? activeDistrictProfile.district_name : "National"} • 37 Nodes
+            </div>
+          </div>
+
+          {/* Scrollable Tab Content Container */}
+          <div className="flex-1 overflow-y-auto py-2.5 pr-1">
+            {/* TAB 1: OUTCOMES & POSTERIORS */}
+            {rightPanelTab === "outcomes" && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {Object.entries(PRIMARY_OUTCOME_CONFIGS).map(([key, cfg]) => (
+                    <CompactOutcomeCard
+                      key={key}
+                      config={{ ...cfg, key }}
+                      value={results?.expected_values?.[key]}
+                      distribution={results?.distributions}
+                      baseline={activeBaseline[key]}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: CAUSAL TRANSMISSION PATHWAYS */}
+            {rightPanelTab === "causal" && (
+              <div className="space-y-3">
+                {groupedPathways.length > 0 ? (
+                  groupedPathways.map(([groupName, paths], gIdx) => (
+                    <div key={gIdx} className="bg-surface-elevated/30 border border-border/60 rounded-lg p-2.5 space-y-2">
+                      <div className="text-[11px] font-semibold text-text-primary flex items-center justify-between">
+                        <span>{groupName}</span>
+                        <span className="text-[10px] font-mono text-text-tertiary">{paths.length} routes</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {paths.map((p, pIdx) => (
+                          <div
+                            key={pIdx}
+                            className="bg-surface border border-border/50 rounded p-2 text-[10px] font-mono flex flex-wrap items-center gap-1"
+                          >
+                            {p.path.map((node, nIdx) => (
+                              <span key={nIdx} className="flex items-center gap-1">
+                                <span className="bg-surface-elevated px-1.5 py-0.5 rounded text-text-primary">
+                                  {formatLabel(node)}
+                                </span>
+                                {nIdx < p.path.length - 1 && (
+                                  <span className="text-primary-400 font-bold">→</span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-xs text-text-tertiary">
+                    No active causal pathways reported for this intervention configuration.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 3: BASELINE VS POLICY DELTA MATRIX */}
+            {rightPanelTab === "delta" && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border text-text-secondary font-mono text-[10px]">
+                      <th className="text-left py-2 px-2 font-semibold">Health Indicator</th>
+                      <th className="text-right py-2 px-2 font-semibold">Baseline</th>
+                      <th className="text-right py-2 px-2 font-semibold text-primary-400">Simulated Policy</th>
+                      <th className="text-right py-2 px-2 font-semibold">Absolute Δ</th>
+                      <th className="text-right py-2 px-2 font-semibold">SDG 2030 Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40 font-mono text-[11px]">
+                    {Object.entries(PRIMARY_OUTCOME_CONFIGS).map(([key, cfg]) => {
+                      const base = activeBaseline[key];
+                      const sim = results?.expected_values?.[key];
+                      const diff = base != null && sim != null ? (sim - base).toFixed(1) : null;
+                      const isPos = diff !== null && parseFloat(diff) > 0;
+                      const isGood = cfg.highIsGood ? isPos : (diff !== null && parseFloat(diff) < 0);
+                      const meetsTarget = cfg.target != null && (cfg.highIsGood ? sim >= cfg.target : sim <= cfg.target);
+
+                      return (
+                        <tr key={key} className="hover:bg-surface-elevated/40">
+                          <td className="py-2 px-2 font-sans font-medium text-text-primary">
+                            {cfg.label}
+                          </td>
+                          <td className="text-right py-2 px-2 text-text-secondary">
+                            {formatNumber(base, 1)}
+                          </td>
+                          <td className="text-right py-2 px-2 text-text-primary font-bold">
+                            {formatNumber(sim, 1)}
+                          </td>
+                          <td
+                            className="text-right py-2 px-2 font-bold"
+                            style={{
+                              color: diff === null ? "var(--text-muted)" : isGood ? "var(--semantic-positive)" : "var(--semantic-negative)",
+                            }}
+                          >
+                            {diff !== null ? `${isPos ? "+" : ""}${diff}` : "—"}
+                          </td>
+                          <td className="text-right py-2 px-2">
+                            {meetsTarget ? (
+                              <span className="inline-block text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800">
+                                On Track
+                              </span>
+                            ) : (
+                              <span className="inline-block text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800">
+                                Gap ({cfg.target != null ? `${cfg.target}` : "—"})
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

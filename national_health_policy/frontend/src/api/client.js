@@ -42,6 +42,7 @@ export const apiClient = {
     return request("GET", `/districts${q}`);
   },
   district: (name) => request("GET", `/district/${encodeURIComponent(name)}`),
+  districtRecommendations: (name) => request("GET", `/district/${encodeURIComponent(name)}/recommendations`),
   simulate: (inputs) => request("POST", "/simulate", { inputs }),
   compare: (scenarioA, scenarioB, labelA = "Scenario A", labelB = "Scenario B") =>
     request("POST", "/compare", {

@@ -24,7 +24,7 @@ from data_pipeline import load_or_build_national_dataset, discretize_for_bn, get
 from bayesian_network import NationalHealthBN, NODE_METADATA, value_to_bin
 from dynamic_bayesian_network import DynamicHealthBN
 from xai_engine import (
-    parse_natural_language_query, generate_policy_explanation, extract_causal_pathways
+    parse_natural_language_query, generate_policy_explanation, extract_causal_pathways, generate_district_recommendation
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -264,6 +264,31 @@ def get_district_details(name: str):
         "latest_data": {k: (round(float(v), 2) if isinstance(v, (float, np.floating)) else v) for k, v in latest.items()},
         "historical_trend": history
     }
+
+
+@app.get("/district/{name}/recommendations")
+async def get_district_recommendations(name: str):
+    """
+    Evaluates a district's empirical baseline using LLaMA-3.3-70B on Groq LPUs,
+    diagnoses critical health gaps, and returns optimized policy lever recommendations.
+    """
+    if state.df is None:
+        raise HTTPException(503, "Dataset not initialized")
+
+    matches = state.df[state.df["district_name"].str.lower() == name.lower()]
+    if matches.empty:
+        raise HTTPException(404, f"District '{name}' not found")
+
+    latest = matches[matches["year"] == matches["year"].max()].iloc[0].to_dict()
+    district_data = {k: (round(float(v), 2) if isinstance(v, (float, np.floating)) else v) for k, v in latest.items()}
+    national_averages = state.summary.get("national_averages", {}) if state.summary else {}
+
+    recs = await generate_district_recommendation(
+        district_name=latest["district_name"],
+        district_data=district_data,
+        national_averages=national_averages
+    )
+    return recs
 
 
 @app.get("/states")

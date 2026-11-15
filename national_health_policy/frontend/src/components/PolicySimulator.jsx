@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Sliders,
   MapPin,
@@ -18,7 +18,10 @@ import {
   GitBranch,
   Table,
   Cpu,
-  Info
+  Info,
+  Volume2,
+  VolumeX,
+  Zap
 } from "lucide-react";
 import {
   apiClient,
@@ -27,6 +30,122 @@ import {
   PRIMARY_OUTCOME_CONFIGS,
   POLICY_PRESETS,
 } from "../api/client";
+
+// ==============================================================================
+// Web Audio API Synthesizer for tactile feedback tick sound on lever movement
+// ==============================================================================
+let audioCtxInstance = null;
+function playLeverTickSound() {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    if (!audioCtxInstance) {
+      audioCtxInstance = new AudioContextClass();
+    }
+    if (audioCtxInstance.state === "suspended") {
+      audioCtxInstance.resume();
+    }
+    const now = audioCtxInstance.currentTime;
+    const osc = audioCtxInstance.createOscillator();
+    const gain = audioCtxInstance.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(540, now);
+    osc.frequency.exponentialRampToValueAtTime(180, now + 0.02);
+
+    gain.gain.setValueAtTime(0.04, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+
+    osc.connect(gain);
+    gain.connect(audioCtxInstance.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.02);
+  } catch (e) {
+    // Silently ignore if audio context is blocked
+  }
+}
+
+// ==============================================================================
+// 60 FPS Real-Time Bayesian Projection for Live Continuous Slider Dragging
+// ==============================================================================
+function computeLiveBayesianProjection(inputs, baseline) {
+  const specialist = Math.max(0, Math.min(1, ((inputs.specialist_availability ?? 28) - 10) / 90));
+  const doctor = Math.max(0, Math.min(1, ((inputs.doctor_ratio ?? 9.5) - 0.5) / 24.5));
+  const delivery = Math.max(0, Math.min(1, ((inputs.institutional_delivery_rate ?? 88.7) - 30) / 70));
+  const immunization = Math.max(0, Math.min(1, ((inputs.immunization_rate ?? 77.7) - 30) / 70));
+  const water = Math.max(0, Math.min(1, ((inputs.clean_water_access ?? 91.8) - 20) / 80));
+  const sanitation = Math.max(0, Math.min(1, ((inputs.sanitation_access ?? 71.9) - 20) / 80));
+  const literacy = Math.max(0, Math.min(1, ((inputs.female_literacy ?? 71.4) - 25) / 75));
+  const budget = Math.max(0, Math.min(1, ((inputs.public_health_budget_share ?? 2.5) - 0.5) / 9.5));
+  const insurance = Math.max(0, Math.min(1, ((inputs.insurance_coverage ?? 49.1) - 5) / 95));
+  const beds = Math.max(0, Math.min(1, ((inputs.bed_availability ?? 15) - 2) / 48));
+  const asha = Math.max(0, Math.min(1, ((inputs.asha_worker_density ?? 12) - 2) / 28));
+  const tele = Math.max(0, Math.min(1, ((inputs.telemedicine_access ?? 46) - 5) / 95));
+
+  // Causal Domain Multipliers
+  const serviceQualityScore = 0.35 * specialist + 0.3 * doctor + 0.2 * beds + 0.15 * budget;
+  const maternalCareScore = 0.4 * delivery + 0.3 * specialist + 0.15 * literacy + 0.15 * asha;
+  const childCareScore = 0.45 * immunization + 0.25 * water + 0.2 * sanitation + 0.1 * asha;
+
+  // MMR (High desirable = low mortality)
+  const pHighMmr = Math.min(0.92, Math.max(0.04, 0.1 + 0.55 * maternalCareScore + 0.25 * serviceQualityScore));
+  const pLowMmr = Math.min(0.9, Math.max(0.04, 0.8 - 0.65 * maternalCareScore));
+  const pMedMmr = Math.max(0.05, 1 - pHighMmr - pLowMmr);
+  const mmrEv = pHighMmr * 45.0 + pMedMmr * 105.0 + pLowMmr * 220.0;
+
+  // IMR (High desirable = low mortality)
+  const pHighImr = Math.min(0.94, Math.max(0.04, 0.12 + 0.55 * childCareScore + 0.2 * serviceQualityScore));
+  const pLowImr = Math.min(0.9, Math.max(0.04, 0.78 - 0.62 * childCareScore));
+  const pMedImr = Math.max(0.05, 1 - pHighImr - pLowImr);
+  const imrEv = pHighImr * 12.0 + pMedImr * 26.0 + pLowImr * 48.0;
+
+  // Life Expectancy
+  const lifeExpScore = 0.3 * maternalCareScore + 0.3 * childCareScore + 0.25 * serviceQualityScore + 0.15 * sanitation;
+  const pHighLife = Math.min(0.9, Math.max(0.05, 0.15 + 0.65 * lifeExpScore));
+  const pLowLife = Math.min(0.85, Math.max(0.05, 0.7 - 0.6 * lifeExpScore));
+  const pMedLife = Math.max(0.05, 1 - pHighLife - pLowLife);
+  const lifeEv = pLowLife * 64.0 + pMedLife * 71.0 + pHighLife * 77.5;
+
+  // Health Equity
+  const equityScore = 0.4 * insurance + 0.3 * asha + 0.15 * tele + 0.15 * water;
+  const pHighEq = Math.min(0.95, Math.max(0.05, 0.15 + 0.7 * equityScore));
+  const pLowEq = Math.min(0.85, Math.max(0.05, 0.75 - 0.65 * equityScore));
+  const pMedEq = Math.max(0.05, 1 - pHighEq - pLowEq);
+  const eqEv = pLowEq * 38.0 + pMedEq * 64.0 + pHighEq * 88.0;
+
+  // UHC Score
+  const uhcScore = 0.45 * insurance + 0.25 * serviceQualityScore + 0.2 * delivery + 0.1 * tele;
+  const pHighUhc = Math.min(0.92, Math.max(0.05, 0.15 + 0.65 * uhcScore));
+  const pLowUhc = Math.min(0.85, Math.max(0.05, 0.75 - 0.62 * uhcScore));
+  const pMedUhc = Math.max(0.05, 1 - pHighUhc - pLowUhc);
+  const uhcEv = pLowUhc * 42.0 + pMedUhc * 68.0 + pHighUhc * 89.0;
+
+  // Overall Health Index
+  const pHighOhi = (pHighMmr + pHighImr + pHighLife + pHighUhc) / 4;
+  const pLowOhi = (pLowMmr + pLowImr + pLowLife + pLowUhc) / 4;
+  const pMedOhi = Math.max(0.05, 1 - pHighOhi - pLowOhi);
+  const ohiEv = pLowOhi * 45.0 + pMedOhi * 70.0 + pHighOhi * 88.5;
+
+  return {
+    expected_values: {
+      maternal_mortality_rate: Math.round(mmrEv * 10) / 10,
+      infant_mortality_rate: Math.round(imrEv * 10) / 10,
+      life_expectancy: Math.round(lifeEv * 10) / 10,
+      health_equity_index: Math.round(eqEv * 10) / 10,
+      universal_health_coverage_score: Math.round(uhcEv * 10) / 10,
+      overall_health_index: Math.round(ohiEv * 10) / 10,
+    },
+    distributions: {
+      maternal_mortality_rate_bin: { Low: Math.round(pLowMmr * 100) / 100, Medium: Math.round(pMedMmr * 100) / 100, High: Math.round(pHighMmr * 100) / 100 },
+      infant_mortality_rate_bin: { Low: Math.round(pLowImr * 100) / 100, Medium: Math.round(pMedImr * 100) / 100, High: Math.round(pHighImr * 100) / 100 },
+      life_expectancy_bin: { Low: Math.round(pLowLife * 100) / 100, Medium: Math.round(pMedLife * 100) / 100, High: Math.round(pHighLife * 100) / 100 },
+      health_equity_index_bin: { Low: Math.round(pLowEq * 100) / 100, Medium: Math.round(pMedEq * 100) / 100, High: Math.round(pHighEq * 100) / 100 },
+      universal_health_coverage_score_bin: { Low: Math.round(pLowUhc * 100) / 100, Medium: Math.round(pMedUhc * 100) / 100, High: Math.round(pHighUhc * 100) / 100 },
+      overall_health_index_bin: { Low: Math.round(pLowOhi * 100) / 100, Medium: Math.round(pMedOhi * 100) / 100, High: Math.round(pHighOhi * 100) / 100 },
+    }
+  };
+}
 
 function formatLabel(key) {
   return key
@@ -210,6 +329,20 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
   const [activeSector, setActiveSector] = useState("all");
   const [rightPanelTab, setRightPanelTab] = useState("outcomes"); // 'outcomes' | 'causal' | 'delta'
 
+  // Live Simulation & Audio Feedback State
+  const debounceTimerRef = useRef(null);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    return localStorage.getItem("nhp_dis_simulator_sound") !== "false";
+  });
+  const [isLiveSimulating, setIsLiveSimulating] = useState(false);
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    localStorage.setItem("nhp_dis_simulator_sound", String(next));
+    if (next) playLeverTickSound();
+  };
+
   // Load district catalog and dynamic national baseline averages
   useEffect(() => {
     async function loadDistrictsCatalog() {
@@ -325,16 +458,69 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
   };
 
   const handleSliderChange = useCallback((key, value) => {
-    setInputs((prev) => ({ ...prev, [key]: parseFloat(value) }));
-  }, []);
+    const numVal = parseFloat(value);
+
+    // 1. Play tactile acoustic tick sound on movement if enabled
+    if (soundEnabled) {
+      playLeverTickSound();
+    }
+
+    setInputs((prev) => {
+      const updated = { ...prev, [key]: numVal };
+
+      // 2. Instant 60 FPS live Bayesian projection for continuous slider dragging
+      const liveProj = computeLiveBayesianProjection(updated, activeBaseline);
+      setResults((prevResults) => ({
+        ...prevResults,
+        expected_values: {
+          ...(prevResults?.expected_values || {}),
+          ...liveProj.expected_values
+        },
+        distributions: {
+          ...(prevResults?.distributions || {}),
+          ...liveProj.distributions
+        }
+      }));
+
+      // 3. Debounced exact server-side Variable Elimination
+      setIsLiveSimulating(true);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(async () => {
+        try {
+          const res = await apiClient.simulate(updated);
+          if (res?.expected_values) {
+            setResults(res);
+          }
+        } catch (err) {
+          console.warn("Live simulation sync:", err);
+        } finally {
+          setIsLiveSimulating(false);
+        }
+      }, 160);
+
+      return updated;
+    });
+  }, [soundEnabled, activeBaseline]);
 
   const handleApplyPreset = (preset) => {
+    if (soundEnabled) playLeverTickSound();
     const updated = {
       ...inputs,
       ...preset.inputs,
       district_name: activeDistrictProfile?.district_name || null,
     };
     setInputs(updated);
+
+    // Instant live projection update
+    const liveProj = computeLiveBayesianProjection(updated, activeBaseline);
+    setResults((prevResults) => ({
+      ...prevResults,
+      expected_values: { ...(prevResults?.expected_values || {}), ...liveProj.expected_values },
+      distributions: { ...(prevResults?.distributions || {}), ...liveProj.distributions }
+    }));
+
     apiClient.simulate(updated).then((res) => setResults(res)).catch(() => {});
   };
 
@@ -459,6 +645,18 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={toggleSound}
+            className={`px-2 py-0.5 text-xs rounded border transition-colors flex items-center gap-1 cursor-pointer ${
+              soundEnabled
+                ? "bg-primary-950/40 border-primary-600 text-primary-300"
+                : "bg-surface-elevated border-border text-text-tertiary hover:text-text-secondary"
+            }`}
+            title="Toggle tactile click sound when sliding levers"
+          >
+            {soundEnabled ? <Volume2 className="w-3 h-3 text-primary-400" /> : <VolumeX className="w-3 h-3" />}
+            <span>{soundEnabled ? "Sound ON" : "Sound OFF"}</span>
+          </button>
           {results && (
             <button
               onClick={handleExportMemo}
@@ -657,14 +855,21 @@ ${Object.entries(PRIMARY_OUTCOME_CONFIGS)
                 <Sliders className="w-3.5 h-3.5 text-primary-400" />
                 Interventions ({filteredSliders.length})
               </div>
-              <button
-                onClick={handleRunSimulation}
-                disabled={loading}
-                className="px-2.5 py-0.5 bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white font-semibold rounded text-[11px] transition-colors flex items-center gap-1 cursor-pointer shadow-sm select-none"
-              >
-                {loading ? <Spinner size={12} /> : <Activity className="w-3 h-3" />}
-                <span>Simulate</span>
-              </button>
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/50 border border-emerald-800 text-emerald-300 text-[10px] font-mono">
+                  <span className={`w-1.5 h-1.5 rounded-full bg-emerald-400 ${isLiveSimulating ? "animate-ping" : ""}`} />
+                  <span>{isLiveSimulating ? "Simulating..." : "Live do-calculus"}</span>
+                </div>
+                <button
+                  onClick={handleRunSimulation}
+                  disabled={loading}
+                  className="px-2 py-0.5 bg-surface-elevated hover:bg-surface border border-border text-text-secondary hover:text-text-primary rounded text-[10px] font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                  title="Force full exact 37-node Variable Elimination on server"
+                >
+                  {loading ? <Spinner size={10} /> : <Zap className="w-3 h-3 text-amber-400" />}
+                  <span>Sync</span>
+                </button>
+              </div>
             </div>
 
             {/* Sector Tabs */}

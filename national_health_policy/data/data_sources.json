@@ -1,0 +1,86 @@
+{
+  "national_sources": [
+    {
+      "name": "Health Management Information System (HMIS)",
+      "agency": "Ministry of Health and Family Welfare (MoHFW)",
+      "url": "https://hmis.nhp.gov.in",
+      "granularity": "District / Facility / Monthly",
+      "coverage": "All 36 States & UTs (750+ Districts)",
+      "key_indicators": ["Institutional Delivery %", "ANC 4+ visits", "Immunization", "Maternal Deaths", "Infant Deaths"]
+    },
+    {
+      "name": "National Family Health Survey (NFHS-4 & NFHS-5)",
+      "agency": "International Institute for Population Sciences (IIPS) & MoHFW",
+      "url": "https://rchiips.org/nfhs",
+      "granularity": "District / Population-representative",
+      "coverage": "636,000+ households sampled nationwide",
+      "key_indicators": ["Under-5 Mortality Rate", "Stunting", "Wasting", "Anemia", "Insurance Coverage", "Female Literacy"]
+    },
+    {
+      "name": "Rural Health Statistics (RHS)",
+      "agency": "Statistics Division, MoHFW",
+      "url": "https://main.mohfw.gov.in",
+      "granularity": "District / Facility level",
+      "coverage": "Annual bulletin of Sub-Centres, PHCs, CHCs, District Hospitals",
+      "key_indicators": ["Doctor-population ratio", "Specialist shortages", "Bed counts", "ANM/Staff nurse availability"]
+    },
+    {
+      "name": "Open Government Data Platform India",
+      "agency": "National Informatics Centre (NIC) & MeitY",
+      "url": "https://data.gov.in",
+      "granularity": "State / District / API endpoints",
+      "coverage": "Nationwide public health data registries",
+      "key_indicators": ["Public health expenditure", "Disease surveillance", "Hospital infrastructure catalogs"]
+    },
+    {
+      "name": "Ayushman Bharat PM-JAY & ABDM Dashboards",
+      "agency": "National Health Authority (NHA)",
+      "url": "https://dashboard.pmjay.gov.in",
+      "granularity": "District / Hospital / Real-time",
+      "coverage": "World's largest government-financed health assurance scheme",
+      "key_indicators": ["Pre-authorization claims", "Empaneled hospital beds", "ABHA digital health records"]
+    },
+    {
+      "name": "National Sample Survey (NSS 75th Round: Schedule 25.2)",
+      "agency": "Ministry of Statistics and Programme Implementation (MoSPI)",
+      "url": "https://mospi.gov.in",
+      "granularity": "State / NSS Region / Socio-economic quintiles",
+      "coverage": "Key Indicators of Social Consumption in India: Health",
+      "key_indicators": ["Out-of-Pocket Expenditure (OOPE)", "Catastrophic Health Expenditure (CHE)", "Hospitalization rates"]
+    },
+    {
+      "name": "Integrated Disease Surveillance Programme (IDSP)",
+      "agency": "National Centre for Disease Control (NCDC)",
+      "url": "https://idsp.nic.in",
+      "granularity": "District / Weekly Outbreak Bulletins",
+      "coverage": "Nationwide early warning surveillance network",
+      "key_indicators": ["Epidemic outbreaks", "Diarrheal diseases", "Vector-borne infections"]
+    }
+  ],
+  "international_benchmarks": [
+    {
+      "name": "WHO Global Health Observatory (GHO)",
+      "agency": "World Health Organization",
+      "url": "https://www.who.int/data/gho",
+      "purpose": "External validation of SDG 3 indicators and international mortality calibration"
+    },
+    {
+      "name": "World Bank Health Indicators",
+      "agency": "The World Bank Group",
+      "url": "https://data.worldbank.org",
+      "purpose": "Cross-country expenditure benchmarking and macroeconomic health comparisons"
+    },
+    {
+      "name": "UNICEF Child Health Data",
+      "agency": "UNICEF",
+      "url": "https://data.unicef.org",
+      "purpose": "Global neonatal, infant, and under-five survival curves"
+    },
+    {
+      "name": "OECD Health Statistics",
+      "agency": "OECD",
+      "url": "https://www.oecd.org/health",
+      "purpose": "High-performing health system staffing ratio benchmarks"
+    }
+  ]
+}

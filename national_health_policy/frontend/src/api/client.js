@@ -2,7 +2,13 @@
  * REST API Client for National Healthcare Policy Decision Intelligence System (NHP-DIS).
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Auto-detect production domain: if VITE_API_URL is unset and running on a domain,
+// default to same-origin relative calls ("") to avoid Mixed-Content (HTTPS -> HTTP) blocks.
+const BASE_URL = import.meta.env.VITE_API_URL !== undefined
+  ? import.meta.env.VITE_API_URL
+  : (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+      ? ""
+      : "http://localhost:8000");
 
 async function request(method, endpoint, payload = null) {
   const options = {

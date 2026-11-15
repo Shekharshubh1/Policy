@@ -11,16 +11,30 @@ import os
 import re
 import json
 import logging
+from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 import httpx
 from dotenv import load_dotenv
 
+# Search for .env in repo root, backend folder, and current working directory
+root_env = Path(__file__).resolve().parent.parent.parent / ".env"
+backend_env = Path(__file__).resolve().parent / ".env"
+if root_env.exists():
+    load_dotenv(dotenv_path=root_env)
+if backend_env.exists():
+    load_dotenv(dotenv_path=backend_env)
 load_dotenv()
+
 logger = logging.getLogger("XAI_Engine")
 
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = "llama-3.3-70b-versatile"
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+# Key & Provider Configuration
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip("\"' \t\r\n")
+GROQ1_API_KEY = os.getenv("GROQ1_API_KEY", "").strip("\"' \t\r\n")
+OPENROUTER_API_KEY = (os.getenv("OPENROUTER_API_KEY", "") or GROQ1_API_KEY).strip("\"' \t\r\n")
+
+# Model definitions
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct")
+GROQ_DIRECT_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 TIMEOUT_SECONDS = 30.0
 
 SYSTEM_POLICY_PARSER = """You are a Senior Public Health Policy Architect for the Government of India (MoHFW and NITI Aayog).
@@ -71,36 +85,71 @@ Format clearly with professional markdown headings.
 
 
 async def call_groq_llm(system_prompt: str, user_prompt: str, temperature: float = 0.2) -> Optional[str]:
-    """Asynchronous HTTP client calling Groq Cloud LPU API."""
-    if not GROQ_API_KEY:
-        return None
+    """
+    Asynchronous LLM invocation for Policy Copilot:
+    Calls LLaMA-3.3-70B on Groq LPUs via OpenRouter or direct Groq Cloud API,
+    with automatic provider fallback.
+    """
+    # 1. Try OpenRouter (meta-llama/llama-3.3-70b-instruct with Groq LPU routing)
+    if OPENROUTER_API_KEY:
+        try:
+            headers = {
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://policy.fddcloud.me",
+                "X-Title": "NHP-DIS Policy Copilot"
+            }
+            payload = {
+                "model": OPENROUTER_MODEL,
+                "provider": {"order": ["Groq"]},
+                "temperature": temperature,
+                "max_tokens": 1200,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ]
+            }
+            async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+                resp = await client.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    content = data["choices"][0]["message"]["content"].strip()
+                    logger.info("✓ LLaMA-3.3-70B inference via Groq/OpenRouter successful")
+                    return content
+                else:
+                    logger.warning(f"OpenRouter Groq call returned HTTP {resp.status_code}: {resp.text}")
+        except Exception as e:
+            logger.warning(f"OpenRouter Groq call exception: {e}")
 
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": GROQ_MODEL,
-        "temperature": temperature,
-        "max_tokens": 1200,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-    }
+    # 2. Try direct Groq Cloud API if GROQ_API_KEY is present
+    if GROQ_API_KEY:
+        try:
+            headers = {
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": GROQ_DIRECT_MODEL,
+                "temperature": temperature,
+                "max_tokens": 1200,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ]
+            }
+            async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+                resp = await client.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    content = data["choices"][0]["message"]["content"].strip()
+                    logger.info("✓ Direct Groq LPU inference successful")
+                    return content
+                else:
+                    logger.warning(f"Direct Groq API returned HTTP {resp.status_code}: {resp.text}")
+        except Exception as e:
+            logger.warning(f"Direct Groq API exception: {e}")
 
-    try:
-        async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
-            resp = await client.post(GROQ_API_URL, headers=headers, json=payload)
-            if resp.status_code == 200:
-                data = resp.json()
-                return data["choices"][0]["message"]["content"].strip()
-            else:
-                logger.warning(f"Groq API returned HTTP {resp.status_code}: {resp.text}")
-                return None
-    except Exception as e:
-        logger.warning(f"Groq API call exception: {e}")
-        return None
+    return None
 
 
 def extract_causal_pathways(interventions: Dict[str, str], target_outcomes: List[str]) -> List[Dict[str, Any]]:

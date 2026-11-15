@@ -3,12 +3,20 @@
   "version": "1.0.0",
   "private": true,
   "description": "National Healthcare Policy Decision Intelligence System (NHP-DIS)",
-  "workspaces": [
-    "national_health_policy/frontend"
-  ],
   "scripts": {
-    "build": "npm --workspace national_health_policy/frontend run build",
+    "build": "cd national_health_policy/frontend && npm run build",
     "deploy": "npx wrangler deploy",
-    "preview": "npm --workspace national_health_policy/frontend run preview"
+    "preview": "cd national_health_policy/frontend && npm run preview"
+  },
+  "dependencies": {
+    "lucide-react": "^1.73.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.3.4",
+    "wrangler": "^3.100.0"
   }
 }

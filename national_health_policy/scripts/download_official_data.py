@@ -59,29 +59,76 @@ INDICATOR_MAP = {
 }
 
 
-def download_raw_files():
-    """Downloads authentic government files and caches them locally."""
-    logger.info("Step 1: Downloading NFHS-5 district factsheet micro-panel...")
-    r_dist = requests.get(URL_NFHS_DISTRICTS, timeout=30)
-    r_dist.raise_for_status()
-    (DATA_DIR / "raw_nfhs5_districts.csv").write_bytes(r_dist.content)
+def download_raw_files(force: bool = False):
+    """Downloads authentic government files and caches them locally, or reuses existing cache."""
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) NHP-DIS/1.0"}
+    timeout_sec = 120
 
-    logger.info("Step 2: Downloading NFHS-5 state mortality benchmarks...")
-    r_states = requests.get(URL_NFHS_STATES, timeout=30)
-    r_states.raise_for_status()
-    (DATA_DIR / "raw_nfhs5_states.csv").write_bytes(r_states.content)
+    dist_file = DATA_DIR / "raw_nfhs5_districts.csv"
+    if not force and dist_file.exists() and dist_file.stat().st_size > 1000000:
+        logger.info(f"✓ NFHS-5 district factsheet micro-panel already cached locally ({dist_file.stat().st_size / 1024 / 1024:.1f} MB)")
+    else:
+        logger.info("Step 1: Downloading NFHS-5 district factsheet micro-panel from IIPS / MoHFW...")
+        try:
+            r_dist = requests.get(URL_NFHS_DISTRICTS, headers=headers, timeout=timeout_sec)
+            r_dist.raise_for_status()
+            dist_file.write_bytes(r_dist.content)
+            logger.info("✓ Downloaded raw_nfhs5_districts.csv")
+        except Exception as e:
+            if dist_file.exists():
+                logger.warning(f"Download timed out, using existing cached {dist_file.name}: {e}")
+            else:
+                raise
 
-    logger.info("Step 3: Downloading MoHFW RHS Hospital Beds dataset...")
-    r_beds = requests.get(URL_MOHFW_BEDS, timeout=30)
-    r_beds.raise_for_status()
-    (DATA_DIR / "raw_mohfw_beds.csv").write_bytes(r_beds.content)
+    states_file = DATA_DIR / "raw_nfhs5_states.csv"
+    if not force and states_file.exists() and states_file.stat().st_size > 100000:
+        logger.info(f"✓ NFHS-5 state vital statistics already cached locally ({states_file.stat().st_size / 1024:.1f} KB)")
+    else:
+        logger.info("Step 2: Downloading NFHS-5 state mortality benchmarks...")
+        try:
+            r_states = requests.get(URL_NFHS_STATES, headers=headers, timeout=timeout_sec)
+            r_states.raise_for_status()
+            states_file.write_bytes(r_states.content)
+            logger.info("✓ Downloaded raw_nfhs5_states.csv")
+        except Exception as e:
+            if states_file.exists():
+                logger.warning(f"Download timed out, using existing cached {states_file.name}: {e}")
+            else:
+                raise
 
-    logger.info("Step 4: Downloading NITI Aayog Multidimensional Poverty Index dataset...")
-    r_mpi = requests.get(URL_NITI_MPI, timeout=30)
-    r_mpi.raise_for_status()
-    (DATA_DIR / "raw_niti_poverty.csv").write_bytes(r_mpi.content)
+    beds_file = DATA_DIR / "raw_mohfw_beds.csv"
+    if not force and beds_file.exists() and beds_file.stat().st_size > 500:
+        logger.info(f"✓ MoHFW RHS Hospital Beds already cached locally ({beds_file.stat().st_size} bytes)")
+    else:
+        logger.info("Step 3: Downloading MoHFW RHS Hospital Beds dataset...")
+        try:
+            r_beds = requests.get(URL_MOHFW_BEDS, headers=headers, timeout=timeout_sec)
+            r_beds.raise_for_status()
+            beds_file.write_bytes(r_beds.content)
+            logger.info("✓ Downloaded raw_mohfw_beds.csv")
+        except Exception as e:
+            if beds_file.exists():
+                logger.warning(f"Download timed out, using existing cached {beds_file.name}: {e}")
+            else:
+                raise
 
-    logger.info("✓ All 4 official government raw datasets successfully archived on disk.")
+    mpi_file = DATA_DIR / "raw_niti_poverty.csv"
+    if not force and mpi_file.exists() and mpi_file.stat().st_size > 10000:
+        logger.info(f"✓ NITI Aayog Poverty Index already cached locally ({mpi_file.stat().st_size / 1024:.1f} KB)")
+    else:
+        logger.info("Step 4: Downloading NITI Aayog Multidimensional Poverty Index dataset...")
+        try:
+            r_mpi = requests.get(URL_NITI_MPI, headers=headers, timeout=timeout_sec)
+            r_mpi.raise_for_status()
+            mpi_file.write_bytes(r_mpi.content)
+            logger.info("✓ Downloaded raw_niti_poverty.csv")
+        except Exception as e:
+            if mpi_file.exists():
+                logger.warning(f"Download timed out, using existing cached {mpi_file.name}: {e}")
+            else:
+                raise
+
+    logger.info("✓ All 4 official government raw datasets verified and active on disk.")
 
 
 def clean_state_name(name: str) -> str:

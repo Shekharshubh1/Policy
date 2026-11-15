@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Download, Search } from "lucide-react";
 import { apiClient } from "../api/client";
 
 export default function StateComparison() {
@@ -37,6 +38,28 @@ export default function StateComparison() {
       return sortAsc ? valA - valB : valB - valA;
     });
 
+  const handleExportCSV = () => {
+    const headers = ["State/UT", "IMR", "MMR", "Institutional Delivery %", "Immunization %", "Sanitation %", "Clean Water %", "Health Index Score"];
+    const rows = filteredStates.map(s => [
+      `"${s.state_name}"`,
+      s.infant_mortality_rate ?? "",
+      s.maternal_mortality_rate ?? "",
+      s.institutional_delivery_rate ?? "",
+      s.immunization_rate ?? "",
+      s.sanitation_access ?? "",
+      s.clean_water_access ?? "",
+      s.overall_health_index ?? ""
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `State_Health_Matrix_NFHS5_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 text-text-secondary text-xs gap-3">
@@ -57,7 +80,7 @@ export default function StateComparison() {
             Benchmark health indicators from NFHS-5 and Rural Health Statistics. Click column headers to sort.
           </p>
         </div>
-        <div>
+        <div className="flex items-center gap-2">
           <input
             type="text"
             placeholder="Filter state or UT..."
@@ -65,6 +88,14 @@ export default function StateComparison() {
             onChange={(e) => setSearch(e.target.value)}
             className="bg-surface border border-border text-text-primary px-3 py-1.5 rounded text-xs focus:border-primary-500 placeholder-text-tertiary w-64"
           />
+          <button
+            onClick={handleExportCSV}
+            className="px-3 py-1.5 bg-surface-elevated hover:bg-surface-elevated/70 border border-border text-text-secondary hover:text-text-primary rounded text-xs transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            title="Export State Matrix to CSV"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 

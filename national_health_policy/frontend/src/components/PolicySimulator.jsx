@@ -177,24 +177,26 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
   const [error, setError] = useState(null);
   const [results, setResults] = useState(null);
 
-  // District selector state
+  // District selector & dynamic national averages state
   const [allDistricts, setAllDistricts] = useState([]);
   const [statesList, setStatesList] = useState([]);
   const [selectedState, setSelectedState] = useState("");
   const [selectedDistrictName, setSelectedDistrictName] = useState("");
   const [districtLoading, setDistrictLoading] = useState(false);
   const [activeDistrictProfile, setActiveDistrictProfile] = useState(null);
+  const [nationalAverages, setNationalAverages] = useState(null);
 
   // Sector filter tabs
   const [activeSector, setActiveSector] = useState("all");
 
-  // Load district catalog
+  // Load district catalog and dynamic national baseline averages from government open data
   useEffect(() => {
     async function loadDistrictsCatalog() {
       try {
-        const [distRes, stateRes] = await Promise.all([
+        const [distRes, stateRes, sumRes] = await Promise.all([
           apiClient.districts(),
           apiClient.states(),
+          apiClient.summary(),
         ]);
         const dists = Array.isArray(distRes) ? distRes : distRes?.districts || [];
         setAllDistricts(dists);
@@ -202,6 +204,13 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
         const states = Array.isArray(stateRes) ? stateRes : stateRes?.states || [];
         const stateNames = states.map((s) => (typeof s === "string" ? s : s.state_name)).filter(Boolean);
         setStatesList(stateNames);
+
+        if (sumRes?.national_averages) {
+          setNationalAverages(sumRes.national_averages);
+        }
+
+        // Auto-run baseline simulation on initial load so user immediately sees Bayesian posteriors
+        apiClient.simulate(DEFAULT_POLICY_INPUTS).then((res) => setResults(res)).catch(() => {});
       } catch (e) {
         console.warn("Could not load district catalog for simulator:", e);
       }
@@ -294,27 +303,20 @@ export default function PolicySimulator({ districtContext, onClearDistrictContex
     if (onClearDistrictContext) onClearDistrictContext();
   };
 
-  // Compute active baseline: either selected district empirical values or national averages
+  // Compute active baseline dynamically from selected district or official national averages
   const activeBaseline = useMemo(() => {
     if (activeDistrictProfile) {
       return {
-        maternal_mortality_rate: activeDistrictProfile.maternal_mortality_rate ?? 103,
-        infant_mortality_rate: activeDistrictProfile.infant_mortality_rate ?? 32,
-        life_expectancy: activeDistrictProfile.life_expectancy ?? 67.2,
-        health_equity_index: activeDistrictProfile.health_equity_index ?? 55,
-        universal_health_coverage_score: activeDistrictProfile.universal_health_coverage_score ?? 61,
-        overall_health_index: activeDistrictProfile.overall_health_index ?? 58,
+        maternal_mortality_rate: activeDistrictProfile.maternal_mortality_rate ?? nationalAverages?.maternal_mortality_rate,
+        infant_mortality_rate: activeDistrictProfile.infant_mortality_rate ?? nationalAverages?.infant_mortality_rate,
+        life_expectancy: activeDistrictProfile.life_expectancy ?? nationalAverages?.life_expectancy,
+        health_equity_index: activeDistrictProfile.health_equity_index ?? nationalAverages?.health_equity_index,
+        universal_health_coverage_score: activeDistrictProfile.universal_health_coverage_score ?? nationalAverages?.universal_health_coverage_score,
+        overall_health_index: activeDistrictProfile.overall_health_index ?? nationalAverages?.overall_health_index,
       };
     }
-    return {
-      maternal_mortality_rate: 103,
-      infant_mortality_rate: 32,
-      life_expectancy: 67.2,
-      health_equity_index: 55,
-      universal_health_coverage_score: 61,
-      overall_health_index: 58,
-    };
-  }, [activeDistrictProfile]);
+    return nationalAverages || {};
+  }, [activeDistrictProfile, nationalAverages]);
 
   // Filtered districts for dropdown
   const filteredDistricts = useMemo(() => {

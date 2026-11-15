@@ -135,6 +135,7 @@ function TrajectoryChart({
 
 export default function LongitudinalForecast() {
   const [districtName, setDistrictName] = useState("");
+  const [districtsList, setDistrictsList] = useState([]);
   const [interventions, setInterventions] = useState({ ...DEFAULT_INTERVENTIONS });
   const [forecast, setForecast] = useState(null);
   const [districtAnalyzed, setDistrictAnalyzed] = useState("National Average");
@@ -143,11 +144,15 @@ export default function LongitudinalForecast() {
 
   useEffect(() => {
     setLoading(true);
-    apiClient
-      .forecast(null, null, 2015, 2035, 2025)
-      .then((res) => {
-        setForecast(res.forecast);
-        setDistrictAnalyzed(res.district_analyzed || "National Average");
+    Promise.all([
+      apiClient.forecast(null, null, 2015, 2035, 2025),
+      apiClient.districts()
+    ])
+      .then(([foreRes, distRes]) => {
+        setForecast(foreRes.forecast);
+        setDistrictAnalyzed(foreRes.district_analyzed || "National Average");
+        const list = Array.isArray(distRes) ? distRes : distRes?.districts || [];
+        setDistrictsList(list);
         setLoading(false);
       })
       .catch(() => {
@@ -210,11 +215,19 @@ export default function LongitudinalForecast() {
           </label>
           <input
             type="text"
-            placeholder="e.g. Varanasi, Patna, Pune"
+            list="districts-forecast-list"
+            placeholder="Type or pick any of 698 districts..."
             value={districtName}
             onChange={(e) => setDistrictName(e.target.value)}
             className="w-full bg-surface-elevated border border-border text-text-primary px-3 py-1.5 rounded text-xs focus:border-primary-500 placeholder-text-tertiary"
           />
+          <datalist id="districts-forecast-list">
+            {districtsList.map((d) => (
+              <option key={`${d.state_name}-${d.district_name}`} value={d.district_name}>
+                {d.state_name}
+              </option>
+            ))}
+          </datalist>
         </div>
 
         <div>

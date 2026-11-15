@@ -56,7 +56,9 @@ export default function NationalOverview() {
           <div className="kpi-header">
             <span className="kpi-label">Maternal Mortality Ratio (MMR)</span>
           </div>
-          <div className="kpi-value">{avgs.maternal_mortality_rate || 155.7}</div>
+          <div className="kpi-value font-mono">
+            {avgs.maternal_mortality_rate != null ? Number(avgs.maternal_mortality_rate).toFixed(1) : "—"}
+          </div>
           <div className="kpi-sub">Per 100,000 live births (SDG 3.1 target: &lt; 70)</div>
         </div>
 
@@ -64,7 +66,9 @@ export default function NationalOverview() {
           <div className="kpi-header">
             <span className="kpi-label">Infant Mortality Rate (IMR)</span>
           </div>
-          <div className="kpi-value">{avgs.infant_mortality_rate || 32.6}</div>
+          <div className="kpi-value font-mono">
+            {avgs.infant_mortality_rate != null ? Number(avgs.infant_mortality_rate).toFixed(1) : "—"}
+          </div>
           <div className="kpi-sub">Per 1,000 live births (SDG 3.2 target: &lt; 23)</div>
         </div>
 
@@ -72,7 +76,9 @@ export default function NationalOverview() {
           <div className="kpi-header">
             <span className="kpi-label">Institutional Delivery Rate</span>
           </div>
-          <div className="kpi-value">{avgs.institutional_delivery_rate || 88.7}%</div>
+          <div className="kpi-value font-mono">
+            {avgs.institutional_delivery_rate != null ? `${Number(avgs.institutional_delivery_rate).toFixed(1)}%` : "—"}
+          </div>
           <div className="kpi-sub">Accredited facility births (NFHS-5)</div>
         </div>
 
@@ -80,7 +86,9 @@ export default function NationalOverview() {
           <div className="kpi-header">
             <span className="kpi-label">Full Child Immunization</span>
           </div>
-          <div className="kpi-value">{avgs.immunization_rate || 77.7}%</div>
+          <div className="kpi-value font-mono">
+            {avgs.immunization_rate != null ? `${Number(avgs.immunization_rate).toFixed(1)}%` : "—"}
+          </div>
           <div className="kpi-sub">Children 12–23 months fully vaccinated</div>
         </div>
 
@@ -88,7 +96,9 @@ export default function NationalOverview() {
           <div className="kpi-header">
             <span className="kpi-label">Doctor-to-Population Ratio</span>
           </div>
-          <div className="kpi-value">{avgs.doctor_ratio || 8.6}</div>
+          <div className="kpi-value font-mono">
+            {avgs.doctor_ratio != null ? Number(avgs.doctor_ratio).toFixed(1) : "—"}
+          </div>
           <div className="kpi-sub">Doctors per 10,000 population (WHO norm: 10.0)</div>
         </div>
 
@@ -96,7 +106,9 @@ export default function NationalOverview() {
           <div className="kpi-header">
             <span className="kpi-label">Overall Health Index</span>
           </div>
-          <div className="kpi-value">{avgs.overall_health_index || 73.8}</div>
+          <div className="kpi-value font-mono">
+            {avgs.overall_health_index != null ? Number(avgs.overall_health_index).toFixed(1) : "—"}
+          </div>
           <div className="kpi-sub">Composite performance score (0–100 scale)</div>
         </div>
       </div>
@@ -108,9 +120,9 @@ export default function NationalOverview() {
           <div className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
             Top Performing States & Union Territories
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-72 overflow-y-auto pr-1">
             <table className="w-full text-xs text-left">
-              <thead>
+              <thead className="sticky top-0 bg-surface">
                 <tr className="border-b border-border text-text-tertiary">
                   <th className="py-2 px-2">State / UT</th>
                   <th className="py-2 px-2 text-right">IMR</th>
@@ -141,9 +153,9 @@ export default function NationalOverview() {
           <div className="text-xs font-semibold uppercase tracking-wider text-amber-400">
             High Priority States (Infrastructure Need)
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-72 overflow-y-auto pr-1">
             <table className="w-full text-xs text-left">
-              <thead>
+              <thead className="sticky top-0 bg-surface">
                 <tr className="border-b border-border text-text-tertiary">
                   <th className="py-2 px-2">State / UT</th>
                   <th className="py-2 px-2 text-right">IMR</th>

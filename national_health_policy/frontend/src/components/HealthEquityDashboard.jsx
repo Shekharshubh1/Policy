@@ -121,25 +121,25 @@ export default function HealthEquityDashboard() {
       <div className="kpi-grid">
         <div className="kpi-card" style={{ "--card-accent": "var(--semantic-positive)" }}>
           <div className="kpi-label">Highest Performing State</div>
-          <div className="kpi-value text-emerald-400 font-sans text-xl">{bestState?.state_name || "Kerala"}</div>
-          <div className="kpi-sub">Composite Score: {bestState?.overall_health_index || 84.2}</div>
+          <div className="kpi-value text-emerald-400 font-sans text-xl">{bestState?.state_name || "—"}</div>
+          <div className="kpi-sub">Composite Score: {bestState?.overall_health_index != null ? bestState.overall_health_index : "—"}</div>
         </div>
 
         <div className="kpi-card" style={{ "--card-accent": "var(--semantic-negative)" }}>
           <div className="kpi-label">Highest Priority Focus State</div>
-          <div className="kpi-value text-rose-400 font-sans text-xl">{worstState?.state_name || "Bihar"}</div>
-          <div className="kpi-sub">Composite Score: {worstState?.overall_health_index || 48.6}</div>
+          <div className="kpi-value text-rose-400 font-sans text-xl">{worstState?.state_name || "—"}</div>
+          <div className="kpi-sub">Composite Score: {worstState?.overall_health_index != null ? worstState.overall_health_index : "—"}</div>
         </div>
 
         <div className="kpi-card" style={{ "--card-accent": "var(--accent-highlight)" }}>
           <div className="kpi-label">National Average IMR</div>
-          <div className="kpi-value">{nationalIMRAvg}</div>
+          <div className="kpi-value font-mono">{nationalIMRAvg}</div>
           <div className="kpi-sub">Per 1,000 live births (SDG 3.2: &lt; 23.0)</div>
         </div>
 
         <div className="kpi-card" style={{ "--card-accent": "var(--accent-primary)" }}>
           <div className="kpi-label">States Meeting SDG IMR Target</div>
-          <div className="kpi-value">{statesBelowSDG} / {safeStates.length || 34}</div>
+          <div className="kpi-value font-mono">{statesBelowSDG} / {safeStates.length || 34}</div>
           <div className="kpi-sub">Jurisdictions with IMR &lt; 23.0</div>
         </div>
       </div>
@@ -148,9 +148,9 @@ export default function HealthEquityDashboard() {
       <div className="bg-surface border border-border rounded-xl p-5 space-y-4">
         <div>
           <h3 className="text-sm font-semibold text-text-primary">
-            State Composite Health Index vs Institutional Delivery Rates (Top 20 Jurisdictions)
+            State Composite Health Index vs Institutional Delivery Rates ({safeStates.length} Jurisdictions)
           </h3>
-          <p className="text-xs text-text-secondary">Distribution of overall health index scores across states.</p>
+          <p className="text-xs text-text-secondary">Distribution of overall health index scores across states from NFHS-5.</p>
         </div>
 
         <div style={{ width: "100%", height: 280 }}>
@@ -173,26 +173,50 @@ export default function HealthEquityDashboard() {
         </div>
       </div>
 
-      {/* Bottom 10 Districts: Vulnerability Directory */}
+      {/* Vulnerable Districts Directory: Scrollable List of Priority Districts */}
       <div className="bg-surface border border-border rounded-xl p-5 space-y-3">
-        <div>
-          <h3 className="text-sm font-semibold text-text-primary">
-            10 Most Vulnerable Districts (Highest Immediate Investment Need)
-          </h3>
-          <p className="text-xs text-text-secondary">Districts exhibiting lowest composite health index scores.</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary">
+              Priority Vulnerable Districts Directory (Lowest Composite Health Indices)
+            </h3>
+            <p className="text-xs text-text-secondary">Districts exhibiting lowest composite health index scores across India.</p>
+          </div>
+          <span className="text-xs font-mono text-primary-400 bg-surface-elevated px-2.5 py-1 rounded border border-border">
+            {safeDistricts.length} Total Districts Assessed
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-          {bottom10Districts.map((d) => (
-            <div key={`${d.state_name}-${d.district_name}`} className="bg-surface-elevated/40 border border-border/80 rounded-lg p-3 space-y-1.5">
-              <div className="font-semibold text-xs text-text-primary truncate">{d.district_name}</div>
-              <div className="text-[10px] text-text-tertiary truncate">{d.state_name}</div>
-              <div className="pt-1 flex justify-between items-center text-[11px] font-mono border-t border-border/50">
-                <span className="text-text-tertiary">IMR: {d.infant_mortality_rate ?? "—"}</span>
-                <span className="text-rose-400 font-bold">{d.overall_health_index ?? "—"}</span>
-              </div>
-            </div>
-          ))}
+        <div className="overflow-x-auto max-h-72 overflow-y-auto pr-1">
+          <table className="w-full text-xs text-left">
+            <thead className="sticky top-0 bg-surface border-b border-border">
+              <tr className="border-b border-border text-text-tertiary font-mono">
+                <th className="py-2 px-2.5">#</th>
+                <th className="py-2 px-2.5">District</th>
+                <th className="py-2 px-2.5">State / UT</th>
+                <th className="py-2 px-2.5 text-right">Infant Mortality</th>
+                <th className="py-2 px-2.5 text-right">Maternal Mortality</th>
+                <th className="py-2 px-2.5 text-right">Inst. Delivery %</th>
+                <th className="py-2 px-2.5 text-right">Health Score</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40 font-mono">
+              {[...safeDistricts]
+                .sort((a, b) => (a.overall_health_index ?? 100) - (b.overall_health_index ?? 100))
+                .slice(0, 50)
+                .map((d, idx) => (
+                  <tr key={`${d.state_name}-${d.district_name}`} className="hover:bg-surface-elevated/40">
+                    <td className="py-2 px-2.5 text-text-tertiary">{idx + 1}</td>
+                    <td className="py-2 px-2.5 font-sans font-medium text-text-primary">{d.district_name}</td>
+                    <td className="py-2 px-2.5 text-text-secondary">{d.state_name}</td>
+                    <td className="py-2 px-2.5 text-right text-rose-400 font-bold">{d.infant_mortality_rate ?? "—"}</td>
+                    <td className="py-2 px-2.5 text-right text-text-secondary">{d.maternal_mortality_rate ?? "—"}</td>
+                    <td className="py-2 px-2.5 text-right text-text-secondary">{d.institutional_delivery_rate != null ? `${d.institutional_delivery_rate}%` : "—"}</td>
+                    <td className="py-2 px-2.5 text-right text-amber-400 font-bold">{d.overall_health_index ?? "—"}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
         </div>
       </div>
 

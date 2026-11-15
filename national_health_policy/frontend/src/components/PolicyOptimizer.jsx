@@ -95,7 +95,7 @@ export function PolicyOptimizer() {
             Pareto-Optimal Intervention Packages ({optimizerResults.pareto_optimal_packages?.length || 0} Found)
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
             {optimizerResults.pareto_optimal_packages?.map((pkg, idx) => {
               const isTop = idx === 0;
               const costCr = (pkg.estimated_cost_inr / 10000000).toFixed(1);

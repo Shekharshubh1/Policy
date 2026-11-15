@@ -153,7 +153,7 @@ export default function SensitivityAnalysis() {
               <span>Marginal Score</span>
             </div>
 
-            <div className="space-y-1.5 pt-1">
+            <div className="space-y-1.5 pt-1 max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
               {rankings.map((item) => (
                 <TornadoRow key={item.variable} item={item} maxAbsScore={maxAbsScore} />
               ))}

@@ -1,19 +1,26 @@
 /* ==========================================================================
    National Healthcare Policy Decision Intelligence System (NHP-DIS)
    Unslopped Institutional Design System
-   Palette: Ink / Graphite Ramp • Typography: Inter / Tabular Mono
+   Dual Theme: Dark (Graphite/Ink) & Light (Institutional Paper)
+   Typography: Inter / Tabular Mono
    ========================================================================== */
 
 :root {
-  /* Ink Neutral Ramp */
+  /* Default: Dark Graphite Neutral Ramp */
   --bg-deep: #080b12;
   --bg-page: #0c101b;
   --bg-surface: #111726;
   --bg-surface-raised: #182035;
   --bg-surface-hover: #1f2a45;
+  --bg-surface-alpha40: rgba(24, 32, 53, 0.4);
+  --bg-surface-alpha60: rgba(24, 32, 53, 0.6);
+  --bg-surface-alpha70: rgba(24, 32, 53, 0.7);
 
   /* Hairlines & Borders */
   --border-hairline: rgba(255, 255, 255, 0.08);
+  --border-hairline-40: rgba(255, 255, 255, 0.04);
+  --border-hairline-50: rgba(255, 255, 255, 0.06);
+  --border-hairline-60: rgba(255, 255, 255, 0.08);
   --border-medium: rgba(255, 255, 255, 0.14);
   --border-focus: #38bdf8;
 
@@ -33,6 +40,19 @@
   --semantic-warning: #f59e0b;
   --semantic-negative: #ef4444;
 
+  /* Badges & Semantics */
+  --badge-emerald-bg: rgba(6, 78, 59, 0.4);
+  --badge-emerald-border: rgba(16, 185, 129, 0.3);
+  --badge-emerald-text: #34d399;
+
+  --badge-amber-bg: rgba(120, 53, 15, 0.4);
+  --badge-amber-border: rgba(245, 158, 11, 0.3);
+  --badge-amber-text: #fbbf24;
+
+  --badge-rose-bg: rgba(136, 19, 55, 0.3);
+  --badge-rose-border: rgba(239, 68, 68, 0.3);
+  --badge-rose-text: #fb7185;
+
   /* Typography */
   --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
@@ -43,6 +63,50 @@
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-full: 9999px;
+}
+
+[data-theme="light"] {
+  /* Crisp Institutional White Paper Theme */
+  --bg-deep: #f8fafc;
+  --bg-page: #f1f5f9;
+  --bg-surface: #ffffff;
+  --bg-surface-raised: #f8fafc;
+  --bg-surface-hover: #e2e8f0;
+  --bg-surface-alpha40: rgba(255, 255, 255, 0.9);
+  --bg-surface-alpha60: rgba(255, 255, 255, 0.95);
+  --bg-surface-alpha70: #ffffff;
+
+  --border-hairline: #e2e8f0;
+  --border-hairline-40: #f1f5f9;
+  --border-hairline-50: #e2e8f0;
+  --border-hairline-60: #cbd5e1;
+  --border-medium: #cbd5e1;
+  --border-focus: #0284c7;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+
+  --accent-primary: #0284c7;
+  --accent-primary-hover: #0369a1;
+  --accent-subtle: #e0f2fe;
+  --accent-highlight: #0284c7;
+
+  --semantic-positive: #059669;
+  --semantic-warning: #d97706;
+  --semantic-negative: #dc2626;
+
+  --badge-emerald-bg: #ecfdf5;
+  --badge-emerald-border: #a7f3d0;
+  --badge-emerald-text: #047857;
+
+  --badge-amber-bg: #fffbeb;
+  --badge-amber-border: #fde68a;
+  --badge-amber-text: #b45309;
+
+  --badge-rose-bg: #fef2f2;
+  --badge-rose-border: #fecaca;
+  --badge-rose-text: #b91c1c;
 }
 
 /* Reset */
@@ -65,14 +129,14 @@ body {
 .bg-surface-darkest { background-color: var(--bg-deep); }
 .bg-surface { background-color: var(--bg-surface); }
 .bg-surface-elevated { background-color: var(--bg-surface-raised); }
-.bg-surface-elevated\/40 { background-color: rgba(24, 32, 53, 0.4); }
-.bg-surface-elevated\/60 { background-color: rgba(24, 32, 53, 0.6); }
-.bg-surface-elevated\/70 { background-color: rgba(24, 32, 53, 0.7); }
+.bg-surface-elevated\/40 { background-color: var(--bg-surface-alpha40); }
+.bg-surface-elevated\/60 { background-color: var(--bg-surface-alpha60); }
+.bg-surface-elevated\/70 { background-color: var(--bg-surface-alpha70); }
 
 .border-border { border-color: var(--border-hairline); }
-.border-border\/40 { border-color: rgba(255, 255, 255, 0.04); }
-.border-border\/50 { border-color: rgba(255, 255, 255, 0.06); }
-.border-border\/60 { border-color: rgba(255, 255, 255, 0.08); }
+.border-border\/40 { border-color: var(--border-hairline-40); }
+.border-border\/50 { border-color: var(--border-hairline-50); }
+.border-border\/60 { border-color: var(--border-hairline-60); }
 
 .text-text-primary { color: var(--text-primary); }
 .text-text-secondary { color: var(--text-secondary); }
@@ -83,29 +147,40 @@ body {
 .text-primary-500 { color: #0ea5e9; }
 .bg-primary-600 { background-color: var(--accent-primary); }
 .bg-primary-950 { background-color: var(--accent-subtle); }
-.bg-primary-950\/40 { background-color: rgba(8, 47, 73, 0.4); }
-.bg-primary-950\/80 { background-color: rgba(8, 47, 73, 0.8); }
+.bg-primary-950\/40 { background-color: var(--bg-surface-alpha40); }
+.bg-primary-950\/80 { background-color: var(--bg-surface-alpha60); }
 .border-primary-500 { border-color: #0ea5e9; }
-.border-primary-800 { border-color: #075985; }
+.border-primary-800 { border-color: var(--accent-subtle); }
 
-/* Status Badges */
-.bg-emerald-950\/60 { background-color: rgba(6, 78, 59, 0.4); }
-.border-emerald-800 { border-color: rgba(16, 185, 129, 0.3); }
-.text-emerald-300 { color: #6ee7b7; }
-.text-emerald-400 { color: #34d399; }
+/* Status Badges with Theme Reactivity */
+.bg-emerald-950\/60 { background-color: var(--badge-emerald-bg); }
+.border-emerald-800 { border-color: var(--badge-emerald-border); }
+.text-emerald-300 { color: var(--badge-emerald-text); }
+.text-emerald-400 { color: var(--semantic-positive); }
 
-.bg-amber-950\/50 { background-color: rgba(120, 53, 15, 0.4); }
-.bg-amber-950\/60 { background-color: rgba(120, 53, 15, 0.5); }
-.border-amber-800 { border-color: rgba(245, 158, 11, 0.3); }
-.text-amber-300 { color: #fcd34d; }
-.text-amber-400 { color: #fbbf24; }
+.bg-amber-950\/50, .bg-amber-950\/60 { background-color: var(--badge-amber-bg); }
+.border-amber-800 { border-color: var(--badge-amber-border); }
+.text-amber-300, .text-amber-400 { color: var(--badge-amber-text); }
 
-.bg-rose-950\/40 { background-color: rgba(136, 19, 55, 0.3); }
-.bg-rose-950\/60 { background-color: rgba(136, 19, 55, 0.4); }
-.border-rose-700 { border-color: rgba(239, 68, 68, 0.3); }
-.border-rose-800 { border-color: rgba(239, 68, 68, 0.25); }
-.text-rose-300 { color: #fda4af; }
-.text-rose-400 { color: #fb7185; }
+.bg-rose-950\/40, .bg-rose-950\/60 { background-color: var(--badge-rose-bg); }
+.border-rose-700, .border-rose-800 { border-color: var(--badge-rose-border); }
+.text-rose-300, .text-rose-400 { color: var(--badge-rose-text); }
+
+/* Custom Institutional Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-deep);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-hairline-60);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
 
 /* Layout Grid & Flex */
 .flex { display: flex; }

@@ -100,7 +100,6 @@ export const INPUT_SLIDER_CONFIGS = [
     max: 100,
     step: 1,
     color: "#ec4899",
-    icon: "👨‍⚕️",
     format: (v) => `${v}%`
   },
   {
@@ -112,7 +111,6 @@ export const INPUT_SLIDER_CONFIGS = [
     max: 25.0,
     step: 0.1,
     color: "#8b5cf6",
-    icon: "🩺",
     format: (v) => `${v} / 10k`
   },
   {
@@ -124,7 +122,6 @@ export const INPUT_SLIDER_CONFIGS = [
     max: 100,
     step: 0.5,
     color: "#3b82f6",
-    icon: "🏥",
     format: (v) => `${v}%`
   },
   {
@@ -136,7 +133,6 @@ export const INPUT_SLIDER_CONFIGS = [
     max: 100,
     step: 0.5,
     color: "#10b981",
-    icon: "💉",
     format: (v) => `${v}%`
   },
   {
@@ -148,7 +144,6 @@ export const INPUT_SLIDER_CONFIGS = [
     max: 100,
     step: 0.5,
     color: "#06b6d4",
-    icon: "🚰",
     format: (v) => `${v}%`
   },
   {
@@ -160,7 +155,6 @@ export const INPUT_SLIDER_CONFIGS = [
     max: 100,
     step: 0.5,
     color: "#f59e0b",
-    icon: "🚻",
     format: (v) => `${v}%`
   },
   {
@@ -172,7 +166,6 @@ export const INPUT_SLIDER_CONFIGS = [
     max: 100,
     step: 0.5,
     color: "#a855f7",
-    icon: "📚",
     format: (v) => `${v}%`
   },
   {
@@ -184,7 +177,6 @@ export const INPUT_SLIDER_CONFIGS = [
     max: 10.0,
     step: 0.1,
     color: "#10b981",
-    icon: "💰",
     format: (v) => `${v}%`
   },
   {
@@ -196,7 +188,6 @@ export const INPUT_SLIDER_CONFIGS = [
     max: 100,
     step: 1,
     color: "#38bdf8",
-    icon: "🛡️",
     format: (v) => `${v}%`
   },
   {
@@ -208,7 +199,6 @@ export const INPUT_SLIDER_CONFIGS = [
     max: 100,
     step: 1,
     color: "#6366f1",
-    icon: "💻",
     format: (v) => `${v}%`
   },
   {
@@ -220,7 +210,6 @@ export const INPUT_SLIDER_CONFIGS = [
     max: 100,
     step: 1,
     color: "#f97316",
-    icon: "🛏️",
     format: (v) => `${v} beds`
   },
   {
@@ -232,7 +221,6 @@ export const INPUT_SLIDER_CONFIGS = [
     max: 35,
     step: 0.5,
     color: "#f43f5e",
-    icon: "👩‍🌾",
     format: (v) => `${v} / 10k`
   }
 ];
@@ -240,7 +228,6 @@ export const INPUT_SLIDER_CONFIGS = [
 export const PRIMARY_OUTCOME_CONFIGS = {
   maternal_mortality_rate: {
     label: "Maternal Mortality Ratio (MMR)",
-    icon: "🤰",
     unit: "per 100k live births",
     target: 70.0,
     color: "#ef4444",
@@ -249,7 +236,6 @@ export const PRIMARY_OUTCOME_CONFIGS = {
   },
   infant_mortality_rate: {
     label: "Infant Mortality Rate (IMR)",
-    icon: "👶",
     unit: "per 1,000 live births",
     target: 23.0,
     color: "#f59e0b",
@@ -258,7 +244,6 @@ export const PRIMARY_OUTCOME_CONFIGS = {
   },
   life_expectancy: {
     label: "Life Expectancy at Birth",
-    icon: "⏳",
     unit: "years",
     target: 75.0,
     color: "#10b981",
@@ -267,7 +252,6 @@ export const PRIMARY_OUTCOME_CONFIGS = {
   },
   health_equity_index: {
     label: "Health Equity Score",
-    icon: "⚖️",
     unit: "index (0-100)",
     target: 80.0,
     color: "#8b5cf6",
@@ -276,7 +260,6 @@ export const PRIMARY_OUTCOME_CONFIGS = {
   },
   universal_health_coverage_score: {
     label: "Universal Health Coverage (UHC)",
-    icon: "🌐",
     unit: "SDG 3.8.1 (0-100)",
     target: 80.0,
     color: "#06b6d4",
@@ -285,7 +268,6 @@ export const PRIMARY_OUTCOME_CONFIGS = {
   },
   overall_health_index: {
     label: "Overall Health Index",
-    icon: "🏆",
     unit: "Composite (0-100)",
     target: 75.0,
     color: "#3b82f6",
@@ -293,3 +275,70 @@ export const PRIMARY_OUTCOME_CONFIGS = {
     format: (v) => `${v.toFixed(1)} / 100`
   }
 };
+
+export const POLICY_PRESETS = [
+  {
+    id: "baseline",
+    name: "National Status Quo",
+    description: "Calibrated national baseline averages across 698 official districts",
+    inputs: { ...DEFAULT_POLICY_INPUTS }
+  },
+  {
+    id: "nhm_surge",
+    name: "NHM Primary Care & HRH Surge",
+    description: "Reinforce PHC density, CHC specialist doctors, and rural community ASHAs",
+    inputs: {
+      ...DEFAULT_POLICY_INPUTS,
+      phc_density: 12.0,
+      specialist_availability: 65.0,
+      doctor_ratio: 14.0,
+      asha_worker_density: 22.0,
+      immunization_rate: 92.0
+    }
+  },
+  {
+    id: "uhc_expansion",
+    name: "PM-JAY Universal Coverage & OOP Relief",
+    description: "Expanded insurance entitlement, hospital bed density, and public budget share",
+    inputs: {
+      ...DEFAULT_POLICY_INPUTS,
+      insurance_coverage: 85.0,
+      public_health_budget_share: 5.5,
+      bed_availability: 35.0,
+      per_capita_health_expenditure: 7500.0
+    }
+  },
+  {
+    id: "mch_mission",
+    name: "Maternal & Child Survival Priority",
+    description: "Targeted push for institutional delivery, screening, and child immunization",
+    inputs: {
+      ...DEFAULT_POLICY_INPUTS,
+      institutional_delivery_rate: 98.0,
+      immunization_rate: 96.0,
+      screening_coverage: 70.0,
+      asha_worker_density: 25.0
+    }
+  },
+  {
+    id: "abdm_digital",
+    name: "Ayushman Bharat Digital Health Drive",
+    description: "Universal eSanjeevani teleconsultation and digitized health records",
+    inputs: {
+      ...DEFAULT_POLICY_INPUTS,
+      telemedicine_access: 88.0,
+      digital_health_records: 85.0
+    }
+  },
+  {
+    id: "wash_determinants",
+    name: "JJM Clean Water & Sanitation Overhaul",
+    description: "Universal piped tap water, 100% IHHL sanitation, and female literacy",
+    inputs: {
+      ...DEFAULT_POLICY_INPUTS,
+      clean_water_access: 98.0,
+      sanitation_access: 95.0,
+      female_literacy: 88.0
+    }
+  }
+];

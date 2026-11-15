@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Sun, Moon } from "lucide-react";
 import { apiClient } from "./api/client";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NationalOverview from "./components/NationalOverview";
@@ -29,6 +30,21 @@ export function App() {
   const [activeTab, setActiveTab] = useState("overview");
   const [systemHealth, setSystemHealth] = useState(null);
   const [healthError, setHealthError] = useState(null);
+  const [selectedDistrictForSim, setSelectedDistrictForSim] = useState(null);
+
+  // Dual Theme: Light Mode (Paper/Ink) & Dark Mode (Graphite/Ink)
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("nhp_dis_theme") || "dark";
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("nhp_dis_theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
 
   useEffect(() => {
     async function checkHealth() {
@@ -46,13 +62,14 @@ export function App() {
   }, []);
 
   const handleSelectDistrictForSimulation = (districtDetails) => {
+    setSelectedDistrictForSim(districtDetails);
     setActiveTab("simulator");
   };
 
   return (
     <div className="min-h-screen bg-surface-darkest text-text-primary flex flex-col font-sans">
       {/* Institutional Top Navigation Bar */}
-      <header className="sticky top-0 z-50 bg-surface border-b border-border px-6 py-3">
+      <header className="sticky top-0 z-50 bg-surface border-b border-border px-6 py-2.5">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-primary-600 flex items-center justify-center text-white font-mono text-sm font-semibold select-none">
@@ -73,8 +90,26 @@ export function App() {
             </div>
           </div>
 
-          {/* Calm Telemetry Status Badge */}
-          <div className="flex items-center gap-2 text-xs">
+          {/* Calm Telemetry Status Badge & Theme Switcher */}
+          <div className="flex items-center gap-3 text-xs">
+            <button
+              onClick={toggleTheme}
+              title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-elevated hover:bg-surface-elevated/70 border border-border text-text-secondary hover:text-text-primary text-xs transition-colors cursor-pointer select-none"
+            >
+              {theme === "dark" ? (
+                <>
+                  <Sun className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="font-mono text-[11px]">Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-3.5 h-3.5 text-indigo-500" />
+                  <span className="font-mono text-[11px]">Dark Mode</span>
+                </>
+              )}
+            </button>
+
             {systemHealth ? (
               <div className="flex items-center gap-2 bg-surface-elevated px-3 py-1 rounded-full border border-border">
                 <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
@@ -133,7 +168,10 @@ export function App() {
         )}
         {activeTab === "simulator" && (
           <ErrorBoundary title="Policy Simulator Error">
-            <PolicySimulator />
+            <PolicySimulator
+              districtContext={selectedDistrictForSim}
+              onClearDistrictContext={() => setSelectedDistrictForSim(null)}
+            />
           </ErrorBoundary>
         )}
         {activeTab === "sensitivity" && (

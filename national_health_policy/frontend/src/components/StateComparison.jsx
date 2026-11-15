@@ -68,9 +68,9 @@ export default function StateComparison() {
         </div>
       </div>
 
-      <div className="bg-surface border border-border rounded-xl overflow-x-auto">
+      <div className="bg-surface border border-border rounded-xl overflow-x-auto max-h-[calc(100vh-220px)] overflow-y-auto shadow-sm">
         <table className="w-full text-xs text-left border-collapse">
-          <thead>
+          <thead className="sticky top-0 bg-surface border-b border-border z-10">
             <tr className="border-b border-border text-text-tertiary select-none">
               <th className="py-2.5 px-3">#</th>
               <th onClick={() => handleSort("state_name")} className="py-2.5 px-3 cursor-pointer hover:text-text-primary">

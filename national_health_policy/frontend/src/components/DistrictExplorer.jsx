@@ -149,7 +149,7 @@ export function DistrictExplorer({ onSelectDistrictForSimulation }) {
       {/* Main Grid: Left List + Right Detail */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* District Selector List */}
-        <div className="lg:col-span-4 bg-surface rounded-xl border border-border p-3 flex flex-col h-[650px]">
+        <div className="lg:col-span-4 bg-surface rounded-xl border border-border p-3 flex flex-col max-h-[calc(100vh-220px)] min-h-[580px]">
           <div className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider px-2 py-1 mb-2">
             Directory ({filteredDistricts.length})
           </div>
@@ -187,7 +187,7 @@ export function DistrictExplorer({ onSelectDistrictForSimulation }) {
         </div>
 
         {/* District Detail View */}
-        <div className="lg:col-span-8 bg-surface rounded-xl border border-border p-6 h-[650px] overflow-y-auto">
+        <div className="lg:col-span-8 bg-surface rounded-xl border border-border p-5 max-h-[calc(100vh-220px)] min-h-[580px] overflow-y-auto">
           {loadingDetails ? (
             <div className="h-full flex items-center justify-center text-text-secondary gap-3 text-xs">
               <span className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></span>
@@ -204,10 +204,10 @@ export function DistrictExplorer({ onSelectDistrictForSimulation }) {
                 </div>
                 {onSelectDistrictForSimulation && (
                   <button
-                    onClick={() => onSelectDistrictForSimulation(districtDetails)}
-                    className="px-3.5 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
+                    onClick={() => onSelectDistrictForSimulation(districtDetails.latest || districtDetails)}
+                    className="px-3.5 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer select-none"
                   >
-                    <span>⚡</span> Load into Simulator
+                    <span>Simulate Policy for {districtDetails.district_name}</span>
                   </button>
                 )}
               </div>

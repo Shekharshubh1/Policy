@@ -245,7 +245,19 @@ npm run build  # Production build
 
 ---
 
-## PROJECT STATUS: ✅ FULLY DELIVERED, UNSLOPPED & DEPLOYED
+## Phase 10: Policy Simulator Advanced Upgrades, Dual-Theme Engine & Scrolling Architecture ✅ COMPLETE
+| Step | Description | Verification |
+| :--- | :--- | :--- |
+| **Real District Simulation** | Integrated 698 official district selector with State filtering directly inside Policy Simulator. Auto-populates all 12 policy levers with authentic empirical NFHS-5/RHS baseline metrics. | Verified via `apiClient.district()` |
+| **Institutional Policy Presets** | Built 6 strategic presets (National Baseline, NHM Primary Care Surge, Universal Health Coverage, Maternal/Child Survival, Digital Health Drive, JJM Clean Water & Sanitation). | One-click simulation triggers |
+| **Dual-Theme Engine** | Implemented high-contrast Institutional White Paper (`light`) and Graphite/Ink (`dark`) themes with automatic `localStorage` persistence and header toggle switch. | Zero style leakage, full CSS variable reactivity |
+| **Internal Scrolling Panels** | Redesigned layouts to eliminate infinite window scrolling: split-pane layout with independent `overflow-y-auto` panels in Simulator, District Explorer, State Comparison, DAG Viewer, and Optimizer. | Responsive `max-h-[calc(100vh-...)]` containers |
+| **Sector Filter Sub-Tabs** | Added categorized sector filtering for policy levers (All, Workforce, Care Delivery, Social Determinants, Financing, Digital). | Focused policy navigation |
+| **Decision Briefing Export** | Added one-click Markdown policy briefing memo generator exporting intervention parameters, baseline delta, and causal pathways. | Tested client-side download |
+
+---
+
+## PROJECT STATUS: ✅ FULLY DELIVERED, UNSLOPPED, DUAL-THEMED & DEPLOYED
 
 All phases delivered & end-to-end verified:
 - ✅ Data Engineering (100% authentic government data: 1,278 records across 698 districts)
@@ -253,7 +265,8 @@ All phases delivered & end-to-end verified:
 - ✅ Explainable AI Layer (Groq LLaMA + symbolic fallback)
 - ✅ FastAPI Backend (12 endpoints, automated test suite: 11/11 pass)
 - ✅ React Frontend (10 views, ErrorBoundary protected, Vite build: 0 errors)
+- ✅ Dual-Theme Design System (High-contrast Institutional Light Mode & Dark Graphite Mode)
+- ✅ Advanced Policy Simulator (698-district empirical loading, 6 presets, split-pane scrolling, memo export)
+- ✅ Viewport-Constrained Scrolling Architecture (eliminated endless page scrolling across all components)
 - ✅ Research Documentation (14 publication-grade documents)
-- ✅ UI Unslopping & Robustness Overhaul (zero blank screens, resilient data handling, clean institutional typography)
 - ✅ Git Remote Synchronization (Committed and pushed to `https://github.com/Shekharshubh1/Policy.git`)
-- ✅ Cloudflare Deployment Kit (Docker Compose, Nginx, Tunnel configuration, and .env templates)

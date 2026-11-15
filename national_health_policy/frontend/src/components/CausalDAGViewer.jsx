@@ -311,16 +311,16 @@ export function CausalDAGViewer() {
 
   return (
     <div
-      className="flex flex-col h-full"
-      style={{ background: "#0f172a", color: "#e2e8f0", fontFamily: "inherit" }}
+      className="flex flex-col h-full rounded-xl border border-border overflow-hidden"
+      style={{ background: "var(--bg-surface)", color: "var(--text-primary)", fontFamily: "inherit" }}
     >
       {/* ── Top bar ── */}
       <div
         className="flex items-center justify-between px-4 py-3 border-b"
-        style={{ borderColor: "#1e293b" }}
+        style={{ borderColor: "var(--border-hairline)" }}
       >
-        <h2 className="text-base font-semibold text-white tracking-wide">
-          Causal DAG — Madhya Pradesh Health Policy
+        <h2 className="text-base font-semibold text-text-primary tracking-wide">
+          Causal DAG — National Health Policy Network (37 Nodes, 52 Edges)
         </h2>
 
         {/* Zoom controls */}
@@ -355,7 +355,7 @@ export function CausalDAGViewer() {
       {/* ── Legend ── */}
       <div
         className="border-b"
-        style={{ borderColor: "#1e293b", background: "#0f1e35" }}
+        style={{ borderColor: "var(--border-hairline)", background: "var(--bg-surface-raised)" }}
       >
         <Legend />
       </div>
@@ -363,7 +363,7 @@ export function CausalDAGViewer() {
       {/* ── Main area ── */}
       <div className="flex flex-1 overflow-hidden">
         {/* SVG canvas */}
-        <div className="flex-1 overflow-auto relative" style={{ background: "#0b1526" }}>
+        <div className="flex-1 overflow-auto relative" style={{ background: "var(--bg-deep)" }}>
           <svg
             width="100%"
             height="100%"
@@ -588,13 +588,13 @@ export function CausalDAGViewer() {
           style={{
             width: 260,
             minWidth: 220,
-            borderColor: "#1e293b",
-            background: "#0d1d31",
+            borderColor: "var(--border-hairline)",
+            background: "var(--bg-surface-raised)",
           }}
         >
           <div
-            className="px-4 py-2 border-b text-xs font-semibold text-slate-400 uppercase tracking-widest"
-            style={{ borderColor: "#1e293b" }}
+            className="px-4 py-2 border-b text-xs font-semibold text-text-secondary uppercase tracking-widest"
+            style={{ borderColor: "var(--border-hairline)" }}
           >
             Selected Node
           </div>

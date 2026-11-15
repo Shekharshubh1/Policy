@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { apiClient } from "../api/client";
 
-export function PolicyOptimizer() {
+export default function PolicyOptimizer() {
   const [budgetCr, setBudgetCr] = useState(50); // Default ₹50 Crore
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -193,5 +193,3 @@ export function PolicyOptimizer() {
     </div>
   );
 }
-
-export default PolicyOptimizer;

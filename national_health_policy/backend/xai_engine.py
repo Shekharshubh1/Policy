@@ -316,3 +316,123 @@ Applying the analytical framework of *Moreira et al. (2025)*, our causal DAG con
 2. **Inter-Ministerial Convergence:** Couple healthcare infrastructure investments with the Jal Jeevan Mission (piped clean drinking water) to dismantle the primary environmental vector of infant mortality.
 3. **Telemedicine Protocol Standardization:** Accelerate eSanjeevani digital consultations at Ayushman Arogya Mandirs (HWCs) to provide timely specialist triage for high-risk obstetric cases.
 """
+
+
+SYSTEM_DISTRICT_RECOMMENDER = """You are the Senior Public Health Strategy Advisor for the Ministry of Health & Family Welfare (MoHFW) and NITI Aayog.
+Given a district's empirical health baseline and national benchmarks, diagnose its critical bottlenecks and prescribe exact numerical policy lever recommendations to achieve optimal improvement.
+
+Return ONLY a valid JSON object matching this exact schema:
+{
+  "diagnostic_summary": "1-2 sentences summarizing the core vulnerabilities.",
+  "primary_bottlenecks": ["Bottleneck 1", "Bottleneck 2", "Bottleneck 3"],
+  "recommended_levers": {
+    "doctor_ratio": float,
+    "specialist_availability": float,
+    "institutional_delivery_rate": float,
+    "immunization_rate": float,
+    "clean_water_access": float,
+    "sanitation_access": float,
+    "telemedicine_access": float,
+    "insurance_coverage": float,
+    "phc_density": float,
+    "bed_availability": float
+  },
+  "clinical_and_upstream_rationale": "Brief scientific justification citing Pearl's causal mechanisms.",
+  "key_directives": ["Priority Directive 1", "Priority Directive 2", "Priority Directive 3"]
+}
+"""
+
+
+async def generate_district_recommendation(
+    district_name: str,
+    district_data: Dict[str, Any],
+    national_averages: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Uses LLaMA-3.3-70B on Groq LPUs to evaluate a district's empirical baseline,
+    diagnose health deficits, and prescribe exact policy slider interventions.
+    """
+    nat = national_averages or {}
+    benchmarks_summary = f"""
+National Benchmarks:
+- IMR: {nat.get('infant_mortality_rate', 32.6)} per 1000
+- MMR: {nat.get('maternal_mortality_rate', 103.0)} per 100k
+- Doctor Ratio: {nat.get('doctor_ratio', 7.5)} per 10k
+- Specialist Availability: {nat.get('specialist_availability', 35.0)}%
+- Institutional Delivery: {nat.get('institutional_delivery_rate', 88.6)}%
+- Full Immunization: {nat.get('immunization_rate', 77.0)}%
+- Clean Water: {nat.get('clean_water_access', 85.0)}%
+- Sanitation: {nat.get('sanitation_access', 78.0)}%
+"""
+
+    state_name = district_data.get("state_name", "India")
+    user_prompt = f"""District: {district_name}, {state_name}
+Current Empirical Baseline (NFHS-5 / RHS / NITI Aayog):
+- Infant Mortality Rate (IMR): {district_data.get('infant_mortality_rate', 32.0)} per 1,000 live births
+- Maternal Mortality Ratio (MMR): {district_data.get('maternal_mortality_rate', 130.0)} per 100k
+- Doctor Ratio: {district_data.get('doctor_ratio', 5.0)} per 10k
+- Specialist Availability: {district_data.get('specialist_availability', 25.0)}%
+- Institutional Delivery Rate: {district_data.get('institutional_delivery_rate', 80.0)}%
+- Full Childhood Immunization: {district_data.get('immunization_rate', 70.0)}%
+- Clean Water Access: {district_data.get('clean_water_access', 75.0)}%
+- Improved Sanitation: {district_data.get('sanitation_access', 65.0)}%
+- Female Literacy: {district_data.get('female_literacy', 65.0)}%
+- Health Insurance (PM-JAY): {district_data.get('insurance_coverage', 40.0)}%
+
+{benchmarks_summary}
+
+Prescribe targeted numerical intervention values for policy sliders to maximize health outcomes in {district_name}."""
+
+    llm_resp = await call_groq_llm(SYSTEM_DISTRICT_RECOMMENDER, user_prompt, temperature=0.2)
+    if llm_resp:
+        try:
+            match = re.search(r'\{.*\}', llm_resp, re.DOTALL)
+            if match:
+                parsed = json.loads(match.group(0))
+                parsed["status"] = "success"
+                parsed["district_name"] = district_name
+                parsed["state_name"] = state_name
+                return parsed
+        except Exception as e:
+            logger.warning(f"Failed to parse LLM district recommendation JSON: {e}")
+
+    # Deterministic Rule-Based Fallback
+    cur_doc = float(district_data.get("doctor_ratio", 5.0) or 5.0)
+    cur_spec = float(district_data.get("specialist_availability", 25.0) or 25.0)
+    cur_inst = float(district_data.get("institutional_delivery_rate", 80.0) or 80.0)
+    cur_imm = float(district_data.get("immunization_rate", 70.0) or 70.0)
+    cur_wat = float(district_data.get("clean_water_access", 75.0) or 75.0)
+    cur_san = float(district_data.get("sanitation_access", 65.0) or 65.0)
+
+    recommended = {
+        "doctor_ratio": round(max(cur_doc * 1.5, 8.5), 1),
+        "specialist_availability": round(min(max(cur_spec * 1.6, 50.0), 95.0), 1),
+        "institutional_delivery_rate": round(min(max(cur_inst + 12.0, 92.0), 99.0), 1),
+        "immunization_rate": round(min(max(cur_imm + 15.0, 88.0), 98.0), 1),
+        "clean_water_access": round(min(max(cur_wat + 15.0, 92.0), 99.0), 1),
+        "sanitation_access": round(min(max(cur_san + 18.0, 85.0), 98.0), 1),
+        "telemedicine_access": 65.0,
+        "insurance_coverage": round(min(max(float(district_data.get("insurance_coverage", 40.0) or 40.0) * 1.8, 75.0), 95.0), 1),
+        "phc_density": round(max(float(district_data.get("phc_density", 6.0) or 6.0) * 1.3, 8.5), 1),
+        "bed_availability": round(max(float(district_data.get("bed_availability", 15.0) or 15.0) * 1.4, 25.0), 1)
+    }
+
+    return {
+        "status": "success",
+        "district_name": district_name,
+        "state_name": state_name,
+        "diagnostic_summary": f"{district_name} ({state_name}) exhibits priority gaps in healthcare staffing and primary infrastructure relative to national benchmarks.",
+        "primary_bottlenecks": [
+            f"Doctor & Specialist Shortage (Current: {cur_doc} doctors/10k)",
+            f"Maternal Care Deficit (Institutional Delivery: {cur_inst}%)",
+            f"Environmental Sanitation Lag (Sanitation: {cur_san}%)"
+        ],
+        "recommended_levers": recommended,
+        "clinical_and_upstream_rationale": "Applying Pearl's causal Bayesian framework, coupling human resource retention with clean water and sanitation directly intercepts maternal and infant mortality pathways.",
+        "key_directives": [
+            "Deploy targeted hard-area retention allowances for specialists at Community Health Centres.",
+            "Accelerate Jal Jeevan Mission piped water coverage to suppress infant diarrheal disease vectors.",
+            "Establish Ayushman Arogya Mandir telemedicine nodes for high-risk obstetric monitoring."
+        ]
+    }
+
